@@ -21,6 +21,7 @@ from config import settings
 from signals import compute_risk, compute_signal, scan_momentum
 from memory import memory_set, memory_get, memory_delete, memory_list, memory_stats
 from identity import register_agent, lookup_agent, search_agents, review_agent, identity_stats
+from context import get_world_context
 
 # ---------------------------------------------------------------------------
 # App
@@ -115,6 +116,12 @@ if settings.evm_address:
     paid_routes["POST /identity/review"] = RouteConfig(
         accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.003", network=settings.network)],
         mime_type="application/json", description="Leave a reputation review for an agent.",
+    )
+
+    # Context endpoint — full world context
+    paid_routes["GET /context"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.005", network=settings.network)],
+        mime_type="application/json", description="Full world context: time, timezone, DST, market hours, holidays, business hours.",
     )
 
     app.add_middleware(PaymentMiddlewareASGI, routes=paid_routes, server=x402_server)
@@ -432,3 +439,17 @@ def post_review(body: ReviewBody):
 def get_identity_stats():
     """Identity service stats. Free."""
     return identity_stats()
+
+
+# ---------------------------------------------------------------------------
+# World Context — ground agents in reality
+# ---------------------------------------------------------------------------
+@app.get("/context")
+def get_context(
+    tz: str = Query(default="UTC", description="Timezone: IANA name or alias (e.g., Europe/Lisbon, EST, WEDT)"),
+    country: str = Query(default="", description="ISO country code for holidays (e.g., US, PT, UK)"),
+    exchanges: str = Query(default="", description="Comma-separated exchange codes (e.g., NYSE,LSE). Empty = major exchanges."),
+):
+    """Full world context for an AI agent session. Time, DST, markets, holidays, business hours."""
+    ex_list = [e.strip().upper() for e in exchanges.split(",") if e.strip()] or None
+    return get_world_context(tz, country, ex_list)

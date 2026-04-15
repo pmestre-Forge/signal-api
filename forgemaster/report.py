@@ -98,7 +98,7 @@ def build_report(ops_report: dict, intel_entry: str) -> dict:
     return {
         "subject": subject,
         "body": body,
-        "to": "pedro.paiva.mestre@gmail.com",
+        "to": "pmestre@cloudbees.com",
     }
 
 
