@@ -271,6 +271,9 @@ def pricing():
             "GET /identity/search": "$0.002",
             "POST /identity/review": "$0.003",
         },
+        "context": {
+            "GET /context?tz=Europe/Lisbon&country=PT": "$0.005",
+        },
     }
 
 
