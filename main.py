@@ -86,37 +86,14 @@ if settings.evm_address:
         ),
     }
 
-    # Memory endpoints — pay per read/write
-    paid_routes["GET /memory/*/*"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
-        mime_type="application/json", description="Read a value from agent memory.",
-    )
+    # Memory — writes cost money (prevents spam), reads are FREE (drives adoption)
     paid_routes["PUT /memory/*/*"] = RouteConfig(
         accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
         mime_type="application/json", description="Write a value to agent memory.",
     )
-    paid_routes["DELETE /memory/*/*"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
-        mime_type="application/json", description="Delete a value from agent memory.",
-    )
-    paid_routes["GET /memory/*"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
-        mime_type="application/json", description="List keys in a memory namespace.",
-    )
 
-    # Identity endpoints — lookup costs, registration is free
-    paid_routes["GET /identity/lookup/*"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
-        mime_type="application/json", description="Look up an agent's identity and reputation.",
-    )
-    paid_routes["GET /identity/search"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
-        mime_type="application/json", description="Search agents by capability.",
-    )
-    paid_routes["POST /identity/review"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.003", network=settings.network)],
-        mime_type="application/json", description="Leave a reputation review for an agent.",
-    )
+    # Identity — ALL FREE. Network effect play. Volume > revenue.
+    # Registration, lookup, search, review — all free. No x402 routes.
 
     # Context endpoint — full world context
     paid_routes["GET /context"] = RouteConfig(
@@ -260,16 +237,16 @@ def pricing():
             "/risk?tickers=X,Y,Z": "$0.01",
         },
         "memory": {
-            "GET /memory/{ns}/{key}": "$0.001",
+            "GET /memory/{ns}/{key}": "FREE",
             "PUT /memory/{ns}/{key}": "$0.002",
-            "DELETE /memory/{ns}/{key}": "$0.001",
-            "GET /memory/{ns}": "$0.002",
+            "DELETE /memory/{ns}/{key}": "FREE",
+            "GET /memory/{ns}": "FREE",
         },
-        "identity": {
+        "identity (ALL FREE)": {
             "POST /identity/register": "FREE",
-            "GET /identity/lookup/{id}": "$0.001",
-            "GET /identity/search": "$0.002",
-            "POST /identity/review": "$0.003",
+            "GET /identity/lookup/{id}": "FREE",
+            "GET /identity/search": "FREE",
+            "POST /identity/review": "FREE",
         },
         "context": {
             "GET /context?tz=Europe/Lisbon&country=PT": "$0.005",
