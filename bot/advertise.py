@@ -292,16 +292,59 @@ def star_related_repos(state: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Main cycle
+# Channel rotation — one post per day, cycles through platforms
 # ---------------------------------------------------------------------------
-def run_ads() -> None:
-    """Run one advertising cycle across all platforms."""
+CHANNEL_ROTATION = [
+    "devto",
+    "twitter",
+    "reddit",
+    "discord",
+    "devto",
+    "twitter",
+    "reddit",
+]
+# 7-day cycle: devto, twitter, reddit, discord, devto, twitter, reddit
+# Dev.to and Twitter get 2 slots, Reddit gets 2 slots, Discord gets 1
+
+
+def run_daily_post() -> None:
+    """Post to ONE channel per day, rotating through platforms."""
     state = _load_state()
     now = datetime.now(timezone.utc).isoformat()
 
-    log.info(f"[{now}] Ad cycle starting")
-    log.info(f"  Used angles — Twitter: {state['twitter_used']}, Reddit: {state['reddit_used']}, "
-             f"Dev.to: {state['devto_used']}, Discord: {state['discord_used']}")
+    channel_idx = state.get("channel_idx", 0) % len(CHANNEL_ROTATION)
+    channel = CHANNEL_ROTATION[channel_idx]
+
+    log.info(f"[{now}] Daily post — channel: {channel} (day {channel_idx + 1}/7)")
+
+    success = False
+    if channel == "twitter":
+        success = post_twitter(state)
+    elif channel == "devto":
+        success = post_devto(state)
+    elif channel == "reddit":
+        success = post_reddit_browser(state)
+    elif channel == "discord":
+        success = post_discord(state)
+
+    # One-time actions (run once then skip)
+    post_github_prs(state)
+    star_related_repos(state)
+
+    state["channel_idx"] = channel_idx + 1
+    _save_state(state)
+
+    status = "OK" if success else "SKIPPED/FAILED"
+    log.info(f"Daily post complete — {channel}: {status}")
+
+
+# Keep old function for manual/testing use
+def run_ads() -> None:
+    """Run full ad cycle across ALL platforms at once (manual use)."""
+    state = _load_state()
+    now = datetime.now(timezone.utc).isoformat()
+
+    log.info(f"[{now}] Full ad cycle starting (all platforms)")
 
     post_twitter(state)
     post_devto(state)
@@ -311,7 +354,7 @@ def run_ads() -> None:
     star_related_repos(state)
 
     _save_state(state)
-    log.info("Ad cycle complete")
+    log.info("Full ad cycle complete")
 
 
 if __name__ == "__main__":

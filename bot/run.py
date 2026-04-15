@@ -1,9 +1,10 @@
 """
 Main bot runner.
 
-    python run.py              # Run on schedule (monitor + ads)
+    python run.py              # Run on schedule (1 post/day, 2 health checks/day)
     python run.py --monitor    # One-shot health check
-    python run.py --advertise  # One-shot ad cycle
+    python run.py --post       # One-shot daily post (one channel)
+    python run.py --advertise  # One-shot full blast (all channels)
     python run.py --status     # Show what's been posted
 """
 
@@ -13,8 +14,8 @@ import time
 
 import schedule
 
-from advertise import run_ads
-from config import AD_INTERVAL_DAYS, MONITOR_INTERVAL_MINUTES, STATE_FILE
+from advertise import run_daily_post, run_ads
+from config import STATE_FILE
 from monitor import run_check
 
 
@@ -34,18 +35,25 @@ def cmd_status():
     print(f"\n{len(posts)} posts made:\n")
     for p in posts[-20:]:
         url = p.get("url", "")
-        print(f"  {p['timestamp'][:10]}  {p['platform']:10s}  {p['angle']:20s}  {url}")
+        platform = p.get("platform", "?")
+        angle = p.get("angle", "?")
+        print(f"  {p['timestamp'][:10]}  {platform:18s}  {angle:25s}  {url}")
 
-    print(f"\nAngles remaining:")
-    print(f"  Twitter: {4 - len(state.get('twitter_used', []))} of 4")
-    print(f"  Reddit:  {4 - len(state.get('reddit_used', []))} of 4")
-    print(f"  Dev.to:  {1 - len(state.get('devto_used', []))} of 1")
-    print(f"  Discord: {2 - len(state.get('discord_used', []))} of 2")
+    from advertise import CHANNEL_ROTATION
+    channel_idx = state.get("channel_idx", 0) % len(CHANNEL_ROTATION)
+    next_channel = CHANNEL_ROTATION[channel_idx]
+
+    print(f"\nNext post: {next_channel} (day {channel_idx + 1}/7)")
+    print(f"\n7-day rotation: devto -> twitter -> reddit -> discord -> devto -> twitter -> reddit")
 
 
 def main():
     if "--monitor" in sys.argv:
         run_check()
+        return
+
+    if "--post" in sys.argv:
+        run_daily_post()
         return
 
     if "--advertise" in sys.argv:
@@ -57,16 +65,20 @@ def main():
         return
 
     print("Signal API Bot", flush=True)
-    print(f"  Monitor: every {MONITOR_INTERVAL_MINUTES} min", flush=True)
-    print(f"  Advertise: every {AD_INTERVAL_DAYS} days", flush=True)
-    print(f"  Platforms: Twitter/X, Dev.to, Reddit, Discord", flush=True)
+    print("  Schedule:", flush=True)
+    print("    Health check: 9am + 9pm", flush=True)
+    print("    Daily post:   10am (one channel per day)", flush=True)
+    print("    Rotation:     devto -> twitter -> reddit -> discord -> devto -> twitter -> reddit", flush=True)
 
-    schedule.every(MONITOR_INTERVAL_MINUTES).minutes.do(run_check)
-    schedule.every(AD_INTERVAL_DAYS).days.do(run_ads)
+    # Health checks at 9am and 9pm
+    schedule.every().day.at("09:00").do(run_check)
+    schedule.every().day.at("21:00").do(run_check)
 
-    # Run immediately on start
+    # One post per day at 10am
+    schedule.every().day.at("10:00").do(run_daily_post)
+
+    # Run health check immediately on start
     run_check()
-    run_ads()
 
     while True:
         schedule.run_pending()

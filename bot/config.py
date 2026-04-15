@@ -23,9 +23,8 @@ GITHUB_REPO = os.getenv("GITHUB_REPO", "")  # owner/repo format
 # Discord webhook for alerts
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 
-# Schedule
-MONITOR_INTERVAL_MINUTES = 30
-AD_INTERVAL_DAYS = 3
+# Schedule — health checks at 9am/9pm, one post at 10am daily
+# Rotation: devto → twitter → reddit → discord → devto → twitter → reddit
 
 # State file (tracks what was posted)
 STATE_FILE = Path(__file__).parent / "state.json"
