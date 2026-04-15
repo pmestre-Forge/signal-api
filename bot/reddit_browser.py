@@ -29,6 +29,16 @@ GITHUB_URL = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 # Chrome user data — Playwright reuses your logged-in session
 CHROME_USER_DATA = Path.home() / "AppData" / "Local" / "Google" / "Chrome" / "User Data"
 
+# Best-fit flair per subreddit (required on most subs, post gets removed without it)
+SUBREDDIT_FLAIRS = {
+    "algotrading": "Infrastructure",
+    "LangChain": "Showcase",
+    "autonomous_agents": "",  # small sub, likely no flair required
+    "ethdev": "My Project",
+    "cryptocurrency": "Dev/Tech",
+    "artificial": "Project",
+}
+
 
 def _load_state() -> dict:
     if STATE_FILE.exists():
@@ -81,14 +91,17 @@ def get_next_reddit_post() -> dict | None:
 
 
 def generate_submit_url(subreddit: str, title: str, body: str) -> str:
-    """Generate old.reddit.com submit URL with pre-filled fields."""
+    """Generate old.reddit.com submit URL with pre-filled fields and flair hint."""
     import urllib.parse
-    params = urllib.parse.urlencode({
+    params = {
         "selftext": "true",
         "title": title,
         "text": body,
-    })
-    return f"https://old.reddit.com/r/{subreddit}/submit?{params}"
+    }
+    flair = SUBREDDIT_FLAIRS.get(subreddit, "")
+    if flair:
+        params["flair"] = flair
+    return f"https://old.reddit.com/r/{subreddit}/submit?{urllib.parse.urlencode(params)}"
 
 
 def auto_submit(post: dict) -> bool:
