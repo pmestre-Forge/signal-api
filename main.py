@@ -215,6 +215,34 @@ def agent_manifest():
 # ---------------------------------------------------------------------------
 # Free endpoints
 # ---------------------------------------------------------------------------
+@app.get("/sitemap.xml")
+def sitemap():
+    """Sitemap for search engines."""
+    base = "https://signal-api-lively-sky-8407.fly.dev"
+    urls = [
+        f"{base}/",
+        f"{base}/products/signals",
+        f"{base}/products/memory",
+        f"{base}/products/identity",
+        f"{base}/products/context",
+        f"{base}/docs",
+        f"{base}/pricing",
+    ]
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for url in urls:
+        xml += f"  <url><loc>{url}</loc></url>\n"
+    xml += "</urlset>"
+    from starlette.responses import Response
+    return Response(content=xml, media_type="application/xml")
+
+
+@app.get("/robots.txt")
+def robots():
+    """Robots.txt — allow all crawlers."""
+    txt = "User-agent: *\nAllow: /\nSitemap: https://signal-api-lively-sky-8407.fly.dev/sitemap.xml\n"
+    return PlainTextResponse(txt)
+
+
 @app.get("/health")
 def health():
     return {
@@ -424,6 +452,80 @@ def get_identity_stats():
 # ---------------------------------------------------------------------------
 # World Context — ground agents in reality
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Product landing pages — dedicated SEO pages for each product
+# ---------------------------------------------------------------------------
+PRODUCT_PAGES = {
+    "signals": {
+        "title": "Trading Signals API for AI Agents | Momentum Signals | x402",
+        "h1": "Trading Signals API",
+        "description": "Momentum trading signals for AI agents. RSI, ADX, MACD, volume analysis. BUY/SELL/HOLD with confidence scoring. Pay per call in USDC.",
+        "keywords": "trading signals API, AI agent trading, momentum signals, RSI API, MACD API, ADX API, algorithmic trading API, x402 trading, pay per call trading signals, AI trading bot signals",
+        "endpoints": ["GET /signal/{ticker} - $0.005", "GET /scan/momentum - $0.01", "GET /risk?tickers=X,Y,Z - $0.01"],
+    },
+    "memory": {
+        "title": "Agent Memory API | Persistent Storage for AI Agents | Key-Value Store",
+        "h1": "Agent Memory API",
+        "description": "Persistent key-value storage for AI agents. Agents forget everything between runs. This fixes that. Free reads, $0.002 per write.",
+        "keywords": "AI agent memory, agent persistent storage, AI agent state, key value store for agents, AI agent database, stateless agent storage, agent session storage, LangChain memory API",
+        "endpoints": ["GET /memory/{ns}/{key} - FREE", "PUT /memory/{ns}/{key} - $0.002", "GET /memory/{ns} - FREE"],
+    },
+    "identity": {
+        "title": "Agent Identity & Reputation | Trust Layer for AI Agents | Agent Registry",
+        "h1": "Agent Identity & Reputation",
+        "description": "Trust layer for AI agents. Register for free, search agents by capability, leave reputation reviews. The credit bureau for bots.",
+        "keywords": "AI agent identity, agent reputation, agent registry, agent trust, AI agent verification, agent to agent trust, agent discovery, AI agent directory, agent reputation score",
+        "endpoints": ["POST /identity/register - FREE", "GET /identity/lookup/{id} - FREE", "GET /identity/search - FREE", "POST /identity/review - FREE"],
+    },
+    "context": {
+        "title": "World Context API for AI Agents | Timezone, Market Hours, Holidays",
+        "h1": "World Context API",
+        "description": "AI agents don't know what time it is. One API call returns: local time, timezone, DST status, market hours across 10 exchanges, upcoming holidays, business hours. $0.005 per call.",
+        "keywords": "AI agent timezone, agent world context, AI agent time, market hours API, AI agent DST, agent timezone API, AI agent market hours, agent business hours, AI agent holidays, AI agent clock",
+        "endpoints": ["GET /context?tz=Europe/Lisbon&country=PT - $0.005"],
+    },
+}
+
+
+def _product_html(product: dict) -> str:
+    endpoints_html = "".join(f'<div class="endpoint"><code>{e}</code></div>' for e in product["endpoints"])
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{product['title']}</title>
+<meta name="description" content="{product['description']}">
+<meta name="keywords" content="{product['keywords']}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://signal-api-lively-sky-8407.fly.dev/">
+<script type="application/ld+json">
+{{"@context":"https://schema.org","@type":"WebAPI","name":"{product['h1']}","description":"{product['description']}","url":"https://signal-api-lively-sky-8407.fly.dev","provider":{{"@type":"Organization","name":"Agent Infrastructure API","url":"https://github.com/pmestre-Forge/signal-api"}}}}
+</script>
+<style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:-apple-system,sans-serif;background:#0a0a0a;color:#e0e0e0;line-height:1.6}}.c{{max-width:800px;margin:0 auto;padding:40px 20px}}h1{{font-size:2.2em;color:#fff;margin-bottom:10px}}.desc{{color:#888;margin-bottom:30px;font-size:1.1em}}.endpoint{{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:15px;margin:8px 0}}code{{color:#4CAF50}}a{{color:#4CAF50}}.btn{{display:inline-block;background:#4CAF50;color:#000;padding:10px 25px;border-radius:8px;font-weight:bold;margin:5px;text-decoration:none}}</style>
+</head>
+<body><div class="c">
+<h1>{product['h1']}</h1>
+<p class="desc">{product['description']}</p>
+<h2>Endpoints</h2>
+{endpoints_html}
+<p style="margin-top:30px"><a href="/docs" class="btn">API Docs</a> <a href="https://github.com/pmestre-Forge/signal-api" class="btn">GitHub</a> <a href="/pricing" class="btn">All Products</a></p>
+<p style="margin-top:20px;color:#666">Part of <a href="/">Agent Infrastructure API</a> — Trading Signals, Memory, Identity, World Context for AI agents.</p>
+</div></body></html>"""
+
+
+@app.get("/products/{product_name}")
+def product_page(product_name: str, request: Request):
+    """Dedicated product landing pages for SEO."""
+    product = PRODUCT_PAGES.get(product_name)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return HTMLResponse(_product_html(product))
+    return product
+
+
 @app.get("/context")
 def get_context(
     tz: str = Query(default="UTC", description="Timezone: IANA name or alias (e.g., Europe/Lisbon, EST, WEDT)"),
