@@ -203,6 +203,61 @@ DISCORD_POSTS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# GitHub — awesome-list PR submissions (one-time per list)
+# ---------------------------------------------------------------------------
+GITHUB_AWESOME_PRS = [
+    {
+        "repo": "xpaysh/awesome-x402",
+        "entry": "- [Signal API](https://github.com/{github_repo}) - Momentum trading signals (RSI/ADX/MACD) for AI agents with x402 micropayments.",
+        "body": "Adding Signal API — a trading signal API built for AI agents with x402 micropayments.\n\n- Endpoints: /signal/TICKER, /scan/momentum, /risk\n- $0.005/call in USDC on Base\n- FastAPI + x402 Python SDK\n- Open source, MIT\n\nRepo: {github}",
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Dev.to — additional articles for rotation
+# ---------------------------------------------------------------------------
+DEVTO_ARTICLES.append({
+    "angle": "agent-economy",
+    "title": "The AI Agent Economy Needs Payment Rails — Here's What I Built",
+    "tags": ["ai", "web3", "python", "startup"],
+    "body": """
+500K+ AI agent wallets exist on x402. Stripe launched machine payment protocols. Google announced AP2. The infrastructure for autonomous AI commerce is being built right now.
+
+I wanted to test the thesis: can you build a service that AI agents pay for, with zero human intermediaries?
+
+## The Experiment
+
+I built a trading signal API. Agents call an endpoint, pay $0.005 in USDC on Base L2 via x402, and get back momentum signals (RSI, ADX, MACD, volume, composite score).
+
+No signup. No API keys. No subscriptions. No humans in the loop.
+
+## What I Learned
+
+**x402 makes this trivial.** About 10 lines of FastAPI middleware to gate any endpoint behind micropayments. The Coinbase facilitator handles verification and settlement.
+
+**The real bottleneck is discovery.** How does an agent find your API? Right now, a human developer has to wire it in. True agent-to-agent discovery (where Agent A searches for "trading signals" and autonomously starts paying Agent B) is 12-18 months away.
+
+**Pricing for machines is different.** Agents don't care about $9.99/month vs $12.99/month. They care about cost-per-call. Sub-cent micropayments change the economics entirely.
+
+## The Stack
+
+- FastAPI with sync endpoints (yfinance blocks I/O)
+- x402 Python SDK with ASGI middleware
+- USDC on Base L2 (sub-cent gas costs)
+- LRU cache, 5-min TTL
+- Deployed on Fly.io (~$0/month)
+
+## What's Next
+
+If this gets traction, the next step is a Bittensor subnet — decentralize the signal generation so miners compete to produce better signals, validators score against actual market performance.
+
+Open source: {github}
+""",
+})
+
+
 def format_content(template: str, github_repo: str, api_url: str) -> str:
     urls = _urls(github_repo, api_url)
     return template.format(github=urls["github"], api=urls["api"])
