@@ -182,7 +182,7 @@ def ai_plugin_manifest():
         "name_for_human": "Signal API - Trading Signals",
         "name_for_model": "signal_api",
         "description_for_human": "Get momentum trading signals (RSI, ADX, MACD, volume) for US stocks. Pay per call in USDC.",
-        "description_for_model": "API for retrieving momentum-based trading signals for US equities. Returns BUY/SELL/HOLD with confidence scores, RSI, ADX, MACD, volume ratio, ATR, and composite scoring. Also provides momentum scanning across 35+ tickers and portfolio risk analysis. Payment via x402 protocol (USDC on Base L2). Endpoints: GET /signal/{ticker} for single stock signal, GET /scan/momentum for top setups, GET /risk?tickers=X,Y,Z for portfolio risk.",
+        "description_for_model": "Agent infrastructure API with 3 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. Payment via x402 (USDC on Base L2).",
         "auth": {
             "type": "none",
             "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
@@ -215,7 +215,7 @@ def agent_manifest():
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
         "url": "https://signal-api-lively-sky-8407.fly.dev",
         "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning"],
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",

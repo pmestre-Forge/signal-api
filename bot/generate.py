@@ -218,18 +218,23 @@ TWITTER_ANGLES = [
     "Focus on x402 protocol and how the payment flow works",
     "Focus on the momentum scoring model (RSI + ADX + MACD + volume)",
     "Focus on the AI agent economy and why agents need payment rails",
-    "Focus on the open-source aspect — fork and build your own monetized API",
-    "Focus on comparison with traditional API subscriptions vs pay-per-call",
-    "Focus on the portfolio risk endpoint and how agents can assess holdings",
-    "Focus on being one of the first live x402 implementations",
-    "Focus on the scan endpoint — agents can discover momentum setups automatically",
+    "Focus on the open-source aspect -- fork and build your own monetized API",
+    "Focus on the NEW Agent Memory API -- agents can now persist state across sessions for $0.001/read",
+    "Focus on the NEW Agent Identity system -- agents register, build reputation, verify each other",
+    "Focus on the full stack: signals + memory + identity = complete agent infrastructure",
+    "Focus on comparison: our 3 services vs building it yourself",
+    "Focus on the scan endpoint -- agents can discover momentum setups automatically",
+    "Focus on being one of the first live x402 implementations with 3 products",
 ]
 
 DEVTO_ANGLES = [
     "Tutorial: how to build a micropayment-gated API in 10 minutes",
-    "The AI agent economy is here — what developers need to build for it",
+    "The AI agent economy is here -- what developers need to build for it",
     "Why pay-per-call beats subscriptions for machine-to-machine commerce",
     "Building with x402: Coinbase's protocol for autonomous payments",
+    "I built persistent memory for AI agents -- pay-per-read/write via x402",
+    "Agent Identity and Reputation: the trust layer the AI economy needs",
+    "From trading signals to full agent infrastructure -- our journey building 3 products",
 ]
 
 REDDIT_ROTATION = [
@@ -239,4 +244,6 @@ REDDIT_ROTATION = [
     "ethdev",
     "cryptocurrency",
     "artificial",
+    "MachineLearning",
+    "Python",
 ]

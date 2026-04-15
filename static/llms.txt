@@ -1,28 +1,41 @@
-# Signal API
+# Agent Infrastructure API
 
-> Momentum trading signals for AI agents. Pay per call in USDC via x402.
+> Trading signals, persistent memory, and identity/reputation for AI agents. Pay per call in USDC via x402.
 
-## What This API Does
+## Three Services
 
-Signal API provides real-time momentum trading signals for US equities. It computes composite scores from RSI(14), ADX(14), MACD(12/26/9), and volume ratio vs 20-day average. Returns BUY, SELL, or HOLD with a confidence score from 0 to 1.
+### 1. Trading Signals
+- GET /signal/{ticker} - $0.005 - BUY/SELL/HOLD with confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price
+- GET /scan/momentum - $0.01 - Top 10 momentum BUY setups from 35+ US equities
+- GET /risk?tickers=AAPL,NVDA - $0.01 - Portfolio risk: volatility, drawdown, correlation, Sharpe
 
-## Endpoints
+### 2. Agent Memory (persistent key-value storage)
+- PUT /memory/{namespace}/{key} - $0.002 - Store a value (JSON body: {"value": "..."})
+- GET /memory/{namespace}/{key} - $0.001 - Read a value
+- DELETE /memory/{namespace}/{key} - $0.001 - Delete a value
+- GET /memory/{namespace} - $0.002 - List all keys in namespace
 
-- GET /signal/{ticker} - $0.005 - Returns signal (BUY/SELL/HOLD), confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price, change_pct
-- GET /scan/momentum - $0.01 - Returns top 10 momentum BUY setups from 35+ US equities ranked by confidence
-- GET /risk?tickers=AAPL,NVDA - $0.01 - Returns portfolio risk metrics: annualized volatility, max drawdown, average correlation, per-ticker Sharpe ratio
+### 3. Agent Identity & Reputation
+- POST /identity/register - FREE - Register agent (JSON body: {"name": "...", "capabilities": [...]})
+- GET /identity/lookup/{agent_id} - $0.001 - Look up agent profile and reputation score
+- GET /identity/search?capability=trading - $0.002 - Search agents by capability
+- POST /identity/review - $0.003 - Leave reputation review (JSON body: {"reviewer_id": "...", "target_id": "...", "score": 0.8})
 
 ## Payment
 
-Uses x402 protocol. No API keys or signup needed. Agent wallet pays in USDC on Base L2 per call. Server responds HTTP 402 with payment instructions. Agent signs USDC transfer, retries with payment header.
+x402 protocol. No API keys or signup. Agent wallet pays in USDC on Base L2 per call.
 
 ## Free Endpoints
 
 - GET /health - API status
-- GET /pricing - Machine-readable price list
-- GET /openapi.json - OpenAPI specification
+- GET /pricing - Full price list
+- GET /memory/stats - Memory usage stats
+- GET /identity/stats - Identity registry stats
+- POST /identity/register - Agent registration
+- GET /openapi.json - OpenAPI spec
 - GET /.well-known/ai-plugin.json - AI plugin manifest
-- GET /.well-known/agent.json - A2A agent discovery manifest
+- GET /.well-known/agent.json - A2A discovery manifest
+- GET /llms.txt - This file
 
 ## Base URL
 
