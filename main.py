@@ -335,7 +335,7 @@ class MemoryWriteBody(BaseModel):
     value: str
 
 
-@app.get("/memory/stats")
+@app.get("/stats/memory")
 def get_memory_stats():
     """Memory service stats. Free."""
     return memory_stats()
@@ -428,7 +428,7 @@ def post_review(body: ReviewBody):
     return review_agent(body.reviewer_id, body.target_id, body.score, body.comment)
 
 
-@app.get("/identity/stats")
+@app.get("/stats/identity")
 def get_identity_stats():
     """Identity service stats. Free."""
     return identity_stats()
