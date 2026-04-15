@@ -29,9 +29,7 @@ from generate import (
     generate_twitter_thread,
 )
 
-# Add Forge publishers to path
-sys.path.insert(0, str(FORGE_ROOT / "twitter"))
-sys.path.insert(0, str(FORGE_ROOT / "devto"))
+# Forge publisher paths — loaded on demand to avoid import conflicts
 
 log = logging.getLogger("signal-bot")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -73,7 +71,11 @@ def post_twitter(state: dict) -> bool:
     github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 
     try:
-        from publisher import TwitterPublisher
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("twitter_pub", str(FORGE_ROOT / "twitter" / "publisher.py"))
+        twitter_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(twitter_mod)
+        TwitterPublisher = twitter_mod.TwitterPublisher
 
         twitter = TwitterPublisher(
             credentials_path=str(FORGE_ROOT / "credentials" / "twitter.json")
@@ -126,12 +128,11 @@ def post_devto(state: dict) -> bool:
     github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 
     try:
-        # Temporarily adjust sys.path for devto publisher
-        devto_path = str(FORGE_ROOT / "devto")
-        if devto_path not in sys.path:
-            sys.path.insert(0, devto_path)
-
-        from publisher import DevtoPublisher
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("devto_pub", str(FORGE_ROOT / "devto" / "publisher.py"))
+        devto_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(devto_mod)
+        DevtoPublisher = devto_mod.DevtoPublisher
 
         devto = DevtoPublisher(
             credentials_path=str(FORGE_ROOT / "credentials" / "devto.json")
