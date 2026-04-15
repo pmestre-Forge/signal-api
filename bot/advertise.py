@@ -183,84 +183,15 @@ def post_devto(state: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Reddit — via Forge reddit_autoposter's PRAW setup
+# Reddit — browser automation (opens pre-filled submit page)
+# Reddit killed self-service API keys in Nov 2025. Browser posting bypasses this.
 # ---------------------------------------------------------------------------
-def post_reddit(state: dict) -> bool:
-    github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
-
-    # Reddit needs its own .env in Forge
-    reddit_env = FORGE_ROOT / "reddit" / ".env"
-    if not reddit_env.exists():
-        log.warning("Reddit: no .env found at Forge/forge-distro/reddit/.env — skipping")
-        return False
-
+def post_reddit_browser(state: dict) -> bool:
     try:
-        import os
-        from dotenv import load_dotenv
-        import praw
-
-        load_dotenv(reddit_env)
-
-        client_id = os.getenv("REDDIT_CLIENT_ID")
-        client_secret = os.getenv("REDDIT_CLIENT_SECRET")
-        username = os.getenv("REDDIT_USERNAME")
-        password = os.getenv("REDDIT_PASSWORD")
-
-        if not all([client_id, client_secret, username, password]):
-            log.warning("Reddit: credentials incomplete in .env — skipping")
-            return False
-
-        reddit = praw.Reddit(
-            client_id=client_id,
-            client_secret=client_secret,
-            username=username,
-            password=password,
-            user_agent=f"SignalAPIBot/1.0 (by /u/{username})",
-        )
-
-        # Pick next subreddit in rotation
-        reddit_idx = state.get("reddit_rotation_idx", 0) % len(REDDIT_ROTATION)
-        sub_name = REDDIT_ROTATION[reddit_idx]
-
-        # Try AI-generated post first
-        ai_post = generate_reddit_post(sub_name, github_url, API_URL)
-
-        if ai_post:
-            title = ai_post["title"]
-            body = ai_post["body"]
-            source = f"ai:{sub_name}"
-            log.info(f"Reddit: using AI-generated post for r/{sub_name}")
-        else:
-            # Fallback to static
-            post_data = _pick_unused(REDDIT_POSTS, state["reddit_used"])
-            if not post_data:
-                state["reddit_used"] = []
-                post_data = _pick_unused(REDDIT_POSTS, [])
-            if not post_data:
-                return False
-
-            title = post_data["title"]
-            body = format_content(post_data["body"], GITHUB_REPO, API_URL)
-            sub_name = post_data["subreddits"][0]
-            state["reddit_used"].append(post_data["angle"])
-            source = f"static:{post_data['angle']}"
-
-        try:
-            submission = reddit.subreddit(sub_name).submit(
-                title=title,
-                selftext=body,
-            )
-            url = f"https://reddit.com{submission.permalink}"
-            log.info(f"Reddit: posted to r/{sub_name} ({source}) {url}")
-            _log_post(state, "reddit", source, url)
-            state["reddit_rotation_idx"] = reddit_idx + 1
-            return True
-        except Exception as e:
-            log.error(f"Reddit: failed to post to r/{sub_name}: {e}")
-            return False
-
+        from reddit_browser import open_submit_in_browser
+        return open_submit_in_browser()
     except Exception as e:
-        log.error(f"Reddit post failed: {e}")
+        log.error(f"Reddit browser post failed: {e}")
         return False
 
 
@@ -374,7 +305,7 @@ def run_ads() -> None:
 
     post_twitter(state)
     post_devto(state)
-    post_reddit(state)
+    post_reddit_browser(state)
     post_discord(state)
     post_github_prs(state)
     star_related_repos(state)
