@@ -93,68 +93,31 @@ def generate_submit_url(subreddit: str, title: str, body: str) -> str:
 
 def auto_submit(post: dict) -> bool:
     """
-    Open pre-filled Reddit submit page and click submit automatically.
-    Uses Playwright with Chrome's existing profile for logged-in session.
+    Open pre-filled Reddit submit page in user's real browser.
+    Reddit blocks Playwright/Selenium, so we use the real browser.
+    Also sends Discord notification to alert user to click submit.
     """
     url = generate_submit_url(post["subreddit"], post["title"], post["body"])
 
+    # Open in user's real browser (not blocked by Reddit)
+    import webbrowser
+    webbrowser.open(url)
+    log.info(f"Reddit: opened r/{post['subreddit']} submit page in browser")
+
+    # Alert via Discord so user knows to click submit
     try:
-        from playwright.sync_api import sync_playwright
+        import httpx
+        import os
+        webhook = os.getenv("DISCORD_WEBHOOK_URL", "")
+        if webhook:
+            httpx.post(webhook, json={
+                "content": f"**Reddit post ready** -- r/{post['subreddit']}\nTitle: {post['title']}\nThe submit page is open in your browser. Click submit."
+            }, timeout=10)
+            log.info("Reddit: Discord notification sent")
+    except Exception:
+        pass
 
-        with sync_playwright() as p:
-            # Launch Chromium with persistent context to reuse Reddit login
-            # Using a separate profile dir to avoid locking Chrome's main profile
-            profile_dir = Path.home() / ".signal-api-reddit-profile"
-
-            browser = p.chromium.launch_persistent_context(
-                user_data_dir=str(profile_dir),
-                headless=False,  # visible so CAPTCHA can be solved if needed
-                args=["--disable-blink-features=AutomationControlled"],
-            )
-
-            page = browser.pages[0] if browser.pages else browser.new_page()
-
-            log.info(f"Reddit: navigating to r/{post['subreddit']} submit page")
-            page.goto(url, wait_until="networkidle", timeout=30000)
-
-            # Check if logged in
-            if "login" in page.url.lower():
-                log.warning("Reddit: not logged in. Waiting 60s for manual login...")
-                page.wait_for_url("**/submit*", timeout=60000)
-
-            # Wait for submit button and click it
-            submit_btn = page.locator('button[type="submit"], input[type="submit"]').first
-            if submit_btn.is_visible(timeout=5000):
-                log.info("Reddit: clicking submit")
-                submit_btn.click()
-
-                # Wait for redirect (successful post redirects to the post page)
-                page.wait_for_url("**/comments/**", timeout=15000)
-                post_url = page.url
-                log.info(f"Reddit: posted successfully! {post_url}")
-
-                browser.close()
-                return True
-            else:
-                log.warning("Reddit: submit button not found, trying alternative selector")
-                # old.reddit.com uses a different form structure
-                page.locator(".submit button, .save-button button, #newlink .btn").first.click(timeout=5000)
-                time.sleep(3)
-                post_url = page.url
-                log.info(f"Reddit: submitted, current URL: {post_url}")
-                browser.close()
-                return True
-
-    except ImportError:
-        log.error("Reddit: playwright not installed. Run: pip install playwright && python -m playwright install chromium")
-        return False
-    except Exception as e:
-        log.error(f"Reddit: auto-submit failed: {e}")
-        # Fallback: just open in default browser
-        log.info("Reddit: falling back to opening browser manually")
-        import webbrowser
-        webbrowser.open(url)
-        return True
+    return True
 
 
 def open_submit_in_browser() -> bool:
