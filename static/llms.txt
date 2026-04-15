@@ -1,0 +1,33 @@
+# Signal API
+
+> Momentum trading signals for AI agents. Pay per call in USDC via x402.
+
+## What This API Does
+
+Signal API provides real-time momentum trading signals for US equities. It computes composite scores from RSI(14), ADX(14), MACD(12/26/9), and volume ratio vs 20-day average. Returns BUY, SELL, or HOLD with a confidence score from 0 to 1.
+
+## Endpoints
+
+- GET /signal/{ticker} - $0.005 - Returns signal (BUY/SELL/HOLD), confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price, change_pct
+- GET /scan/momentum - $0.01 - Returns top 10 momentum BUY setups from 35+ US equities ranked by confidence
+- GET /risk?tickers=AAPL,NVDA - $0.01 - Returns portfolio risk metrics: annualized volatility, max drawdown, average correlation, per-ticker Sharpe ratio
+
+## Payment
+
+Uses x402 protocol. No API keys or signup needed. Agent wallet pays in USDC on Base L2 per call. Server responds HTTP 402 with payment instructions. Agent signs USDC transfer, retries with payment header.
+
+## Free Endpoints
+
+- GET /health - API status
+- GET /pricing - Machine-readable price list
+- GET /openapi.json - OpenAPI specification
+- GET /.well-known/ai-plugin.json - AI plugin manifest
+- GET /.well-known/agent.json - A2A agent discovery manifest
+
+## Base URL
+
+https://signal-api-lively-sky-8407.fly.dev
+
+## Source Code
+
+https://github.com/pmestre-Forge/signal-api (MIT License)

@@ -152,6 +152,16 @@ def ai_plugin_manifest():
     })
 
 
+@app.get("/llms.txt")
+def llms_txt():
+    """Plain text description of this API for LLMs."""
+    txt_path = Path(__file__).parent / "static" / "llms.txt"
+    if txt_path.exists():
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(txt_path.read_text(encoding="utf-8"))
+    return PlainTextResponse("Signal API - Trading signals for AI agents")
+
+
 @app.get("/.well-known/agent.json")
 def agent_manifest():
     """Google A2A-style agent discovery manifest."""
