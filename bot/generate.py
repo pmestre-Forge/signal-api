@@ -14,6 +14,30 @@ log = logging.getLogger("signal-bot")
 
 PRODUCT_CONFIG = json.loads((Path(__file__).parent / "product_config.json").read_text())
 
+# Product rotation — each day focuses on ONE product
+PRODUCT_ROTATION = [
+    {
+        "name": "Trading Signals",
+        "focus": "Momentum trading signals API (RSI, ADX, MACD, volume). BUY/SELL/HOLD for US stocks. $0.005/call.",
+        "endpoint": "GET /signal/{ticker}",
+    },
+    {
+        "name": "Agent Memory",
+        "focus": "Persistent key-value storage for AI agents. Agents forget everything between runs. This fixes that. $0.001/read, $0.002/write.",
+        "endpoint": "PUT /memory/{ns}/{key}",
+    },
+    {
+        "name": "Agent Identity",
+        "focus": "Trust layer for AI agents. Register (free), search by capability, leave reputation reviews. Agents can verify each other before transacting.",
+        "endpoint": "POST /identity/register (free), GET /identity/lookup",
+    },
+    {
+        "name": "World Context",
+        "focus": "AI agents don't know what time it is, what timezone you're in, or if markets are open. One API call returns: local time, DST, market hours across 10 exchanges, holidays, business hours. $0.005/call.",
+        "endpoint": "GET /context?tz=Europe/Lisbon&country=PT",
+    },
+]
+
 # Optional: use Anthropic for fresh content
 try:
     from anthropic import Anthropic
@@ -29,16 +53,28 @@ def _get_client():
     return Anthropic(api_key=api_key)
 
 
+def _today_product() -> dict:
+    """Get today's featured product based on day rotation."""
+    import datetime
+    day_of_year = datetime.datetime.now().timetuple().tm_yday
+    return PRODUCT_ROTATION[day_of_year % len(PRODUCT_ROTATION)]
+
+
 def generate_twitter_thread(angle: str, github_url: str, api_url: str) -> list[str] | None:
     """Generate a fresh Twitter thread using Claude. Returns list of tweets or None."""
     client = _get_client()
     if not client:
         return None
 
-    prompt = f"""You are a concise technical marketer. Write a 3-4 tweet thread promoting this product:
+    product = _today_product()
 
-Product: {PRODUCT_CONFIG['name']}
-Description: {PRODUCT_CONFIG['description']}
+    prompt = f"""You are a concise technical marketer. Write a 3-4 tweet thread promoting this specific product:
+
+TODAY'S FOCUS PRODUCT: {product['name']}
+Product details: {product['focus']}
+Example endpoint: {product['endpoint']}
+
+Full platform: {PRODUCT_CONFIG['name']} — also offers {', '.join(p['name'] for p in PRODUCT_ROTATION if p['name'] != product['name'])}
 GitHub: {github_url}
 Live API: {api_url}
 
@@ -86,17 +122,22 @@ def generate_devto_article(angle: str, github_url: str, api_url: str) -> dict | 
     if not client:
         return None
 
-    prompt = f"""Write a Dev.to article about this product:
+    product = _today_product()
 
-Product: {PRODUCT_CONFIG['name']}
-Description: {PRODUCT_CONFIG['description']}
+    prompt = f"""Write a Dev.to article about this specific product:
+
+TODAY'S FOCUS: {product['name']}
+Details: {product['focus']}
+Endpoint: {product['endpoint']}
+
+Full platform: {PRODUCT_CONFIG['name']}
 Tech stack: {', '.join(PRODUCT_CONFIG['tech_stack'])}
 GitHub: {github_url}
 Live API: {api_url}
 
 Angle: {angle}
 
-Target audience: developers building AI agents who need market data.
+Target audience: developers building AI agents.
 
 Features: {json.dumps(PRODUCT_CONFIG['features'])}
 Pricing: {json.dumps(PRODUCT_CONFIG['pricing'])}
@@ -154,14 +195,18 @@ def generate_reddit_post(subreddit: str, github_url: str, api_url: str) -> dict 
     if not client:
         return None
 
-    sub_config = PRODUCT_CONFIG["subreddits"].get(f"r/{subreddit}", {})
-    angle = sub_config.get("angle", "general")
+    product = _today_product()
+    sub_config = PRODUCT_CONFIG.get("subreddits", {}).get(f"r/{subreddit}", {})
+    angle = sub_config.get("angle", product["focus"])
     tone = sub_config.get("tone", "developer-friendly")
 
-    prompt = f"""Write a Reddit post for r/{subreddit} about this product:
+    prompt = f"""Write a Reddit post for r/{subreddit} about this specific product:
 
-Product: {PRODUCT_CONFIG['name']}
-Description: {PRODUCT_CONFIG['description']}
+TODAY'S FOCUS: {product['name']}
+Details: {product['focus']}
+Endpoint: {product['endpoint']}
+
+Full platform: {PRODUCT_CONFIG['name']}
 GitHub: {github_url}
 Live API: {api_url}
 
@@ -224,7 +269,9 @@ TWITTER_ANGLES = [
     "Focus on the full stack: signals + memory + identity = complete agent infrastructure",
     "Focus on comparison: our 3 services vs building it yourself",
     "Focus on the scan endpoint -- agents can discover momentum setups automatically",
-    "Focus on being one of the first live x402 implementations with 3 products",
+    "Focus on being one of the first live x402 implementations with 4 products",
+    "Focus on the World Context API — AI agents don't know what time it is. This fixes it.",
+    "Focus on how the Context API knows market hours, holidays, DST across 10 exchanges and 4 countries",
 ]
 
 DEVTO_ANGLES = [
@@ -234,7 +281,9 @@ DEVTO_ANGLES = [
     "Building with x402: Coinbase's protocol for autonomous payments",
     "I built persistent memory for AI agents -- pay-per-read/write via x402",
     "Agent Identity and Reputation: the trust layer the AI economy needs",
-    "From trading signals to full agent infrastructure -- our journey building 3 products",
+    "From trading signals to full agent infrastructure -- our journey building 4 products",
+    "AI agents don't know what time it is — I built an API that grounds them in reality",
+    "World Context API: one call returns time, DST, market hours, holidays for any timezone",
 ]
 
 REDDIT_ROTATION = [

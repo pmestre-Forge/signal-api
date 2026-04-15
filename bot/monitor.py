@@ -19,6 +19,7 @@ def check_health() -> dict:
         "api": f"{API_URL}/health",
         "memory": f"{API_URL}/stats/memory",
         "identity": f"{API_URL}/stats/identity",
+        "context": f"{API_URL}/pricing",
     }
 
     for name, url in checks.items():
