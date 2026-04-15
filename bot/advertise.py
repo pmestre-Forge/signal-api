@@ -20,6 +20,14 @@ from content import (
     TWITTER_THREADS,
     format_content,
 )
+from generate import (
+    DEVTO_ANGLES,
+    REDDIT_ROTATION,
+    TWITTER_ANGLES,
+    generate_devto_article,
+    generate_reddit_post,
+    generate_twitter_thread,
+)
 
 # Add Forge publishers to path
 sys.path.insert(0, str(FORGE_ROOT / "twitter"))
@@ -62,14 +70,7 @@ def _log_post(state: dict, platform: str, angle: str, url: str = "") -> None:
 # Twitter/X — via Forge TwitterPublisher
 # ---------------------------------------------------------------------------
 def post_twitter(state: dict) -> bool:
-    thread_data = _pick_unused(TWITTER_THREADS, state["twitter_used"])
-    if not thread_data:
-        log.info("Twitter: all angles used, resetting rotation")
-        state["twitter_used"] = []
-        thread_data = _pick_unused(TWITTER_THREADS, [])
-
-    if not thread_data:
-        return False
+    github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 
     try:
         from publisher import TwitterPublisher
@@ -78,9 +79,29 @@ def post_twitter(state: dict) -> bool:
             credentials_path=str(FORGE_ROOT / "credentials" / "twitter.json")
         )
 
-        tweets = [format_content(t, GITHUB_REPO, API_URL) for t in thread_data["tweets"]]
+        # Try AI-generated content first
+        ai_angle_idx = state.get("twitter_ai_idx", 0) % len(TWITTER_ANGLES)
+        angle = TWITTER_ANGLES[ai_angle_idx]
+        tweets = generate_twitter_thread(angle, github_url, API_URL)
 
-        # Enforce 280 char limit per tweet
+        if tweets:
+            log.info(f"Twitter: using AI-generated thread (angle: {angle[:50]})")
+            state["twitter_ai_idx"] = ai_angle_idx + 1
+            source = f"ai:{angle[:30]}"
+        else:
+            # Fallback to static content
+            thread_data = _pick_unused(TWITTER_THREADS, state["twitter_used"])
+            if not thread_data:
+                state["twitter_used"] = []
+                thread_data = _pick_unused(TWITTER_THREADS, [])
+            if not thread_data:
+                return False
+
+            tweets = [format_content(t, GITHUB_REPO, API_URL) for t in thread_data["tweets"]]
+            state["twitter_used"].append(thread_data["angle"])
+            source = f"static:{thread_data['angle']}"
+
+        # Enforce 280 char limit
         for i, t in enumerate(tweets):
             if len(t) > 280:
                 tweets[i] = t[:277] + "..."
@@ -89,9 +110,8 @@ def post_twitter(state: dict) -> bool:
         first_id = results[0].get("data", {}).get("id", "")
         url = f"https://x.com/PedroForge/status/{first_id}" if first_id else ""
 
-        log.info(f"Twitter: posted thread (angle={thread_data['angle']}) {url}")
-        state["twitter_used"].append(thread_data["angle"])
-        _log_post(state, "twitter", thread_data["angle"], url)
+        log.info(f"Twitter: posted thread ({source}) {url}")
+        _log_post(state, "twitter", source, url)
         return True
 
     except Exception as e:
@@ -103,40 +123,57 @@ def post_twitter(state: dict) -> bool:
 # Dev.to — via Forge DevtoPublisher
 # ---------------------------------------------------------------------------
 def post_devto(state: dict) -> bool:
-    article_data = _pick_unused(DEVTO_ARTICLES, state["devto_used"])
-    if not article_data:
-        log.info("Dev.to: all angles used, resetting rotation")
-        state["devto_used"] = []
-        article_data = _pick_unused(DEVTO_ARTICLES, [])
-
-    if not article_data:
-        return False
+    github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 
     try:
-        from publisher import DevtoPublisher
-
         # Temporarily adjust sys.path for devto publisher
         devto_path = str(FORGE_ROOT / "devto")
         if devto_path not in sys.path:
             sys.path.insert(0, devto_path)
 
+        from publisher import DevtoPublisher
+
         devto = DevtoPublisher(
             credentials_path=str(FORGE_ROOT / "credentials" / "devto.json")
         )
 
-        body = format_content(article_data["body"], GITHUB_REPO, API_URL)
+        # Try AI-generated article first
+        ai_angle_idx = state.get("devto_ai_idx", 0) % len(DEVTO_ANGLES)
+        angle = DEVTO_ANGLES[ai_angle_idx]
+        ai_article = generate_devto_article(angle, github_url, API_URL)
 
-        result = devto.publish_article(
-            title=article_data["title"],
-            body_markdown=body,
-            tags=article_data["tags"],
-            published=True,
-        )
+        if ai_article:
+            log.info(f"Dev.to: using AI-generated article (angle: {angle[:50]})")
+            result = devto.publish_article(
+                title=ai_article["title"],
+                body_markdown=ai_article["body"],
+                tags=ai_article["tags"],
+                published=True,
+            )
+            state["devto_ai_idx"] = ai_angle_idx + 1
+            source = f"ai:{angle[:30]}"
+        else:
+            # Fallback to static
+            article_data = _pick_unused(DEVTO_ARTICLES, state["devto_used"])
+            if not article_data:
+                state["devto_used"] = []
+                article_data = _pick_unused(DEVTO_ARTICLES, [])
+            if not article_data:
+                return False
+
+            body = format_content(article_data["body"], GITHUB_REPO, API_URL)
+            result = devto.publish_article(
+                title=article_data["title"],
+                body_markdown=body,
+                tags=article_data["tags"],
+                published=True,
+            )
+            state["devto_used"].append(article_data["angle"])
+            source = f"static:{article_data['angle']}"
 
         url = result.get("url", "")
-        log.info(f"Dev.to: published article (angle={article_data['angle']}) {url}")
-        state["devto_used"].append(article_data["angle"])
-        _log_post(state, "devto", article_data["angle"], url)
+        log.info(f"Dev.to: published ({source}) {url}")
+        _log_post(state, "devto", source, url)
         return True
 
     except Exception as e:
@@ -148,14 +185,7 @@ def post_devto(state: dict) -> bool:
 # Reddit — via Forge reddit_autoposter's PRAW setup
 # ---------------------------------------------------------------------------
 def post_reddit(state: dict) -> bool:
-    post_data = _pick_unused(REDDIT_POSTS, state["reddit_used"])
-    if not post_data:
-        log.info("Reddit: all angles used, resetting rotation")
-        state["reddit_used"] = []
-        post_data = _pick_unused(REDDIT_POSTS, [])
-
-    if not post_data:
-        return False
+    github_url = f"https://github.com/{GITHUB_REPO}" if GITHUB_REPO else ""
 
     # Reddit needs its own .env in Forge
     reddit_env = FORGE_ROOT / "reddit" / ".env"
@@ -187,25 +217,46 @@ def post_reddit(state: dict) -> bool:
             user_agent=f"SignalAPIBot/1.0 (by /u/{username})",
         )
 
-        body = format_content(post_data["body"], GITHUB_REPO, API_URL)
-        posted = False
+        # Pick next subreddit in rotation
+        reddit_idx = state.get("reddit_rotation_idx", 0) % len(REDDIT_ROTATION)
+        sub_name = REDDIT_ROTATION[reddit_idx]
 
-        for sub_name in post_data["subreddits"]:
-            try:
-                submission = reddit.subreddit(sub_name).submit(
-                    title=post_data["title"],
-                    selftext=body,
-                )
-                url = f"https://reddit.com{submission.permalink}"
-                log.info(f"Reddit: posted to r/{sub_name} {url}")
-                _log_post(state, "reddit", f"{post_data['angle']}:{sub_name}", url)
-                posted = True
-            except Exception as e:
-                log.error(f"Reddit: failed to post to r/{sub_name}: {e}")
+        # Try AI-generated post first
+        ai_post = generate_reddit_post(sub_name, github_url, API_URL)
 
-        if posted:
+        if ai_post:
+            title = ai_post["title"]
+            body = ai_post["body"]
+            source = f"ai:{sub_name}"
+            log.info(f"Reddit: using AI-generated post for r/{sub_name}")
+        else:
+            # Fallback to static
+            post_data = _pick_unused(REDDIT_POSTS, state["reddit_used"])
+            if not post_data:
+                state["reddit_used"] = []
+                post_data = _pick_unused(REDDIT_POSTS, [])
+            if not post_data:
+                return False
+
+            title = post_data["title"]
+            body = format_content(post_data["body"], GITHUB_REPO, API_URL)
+            sub_name = post_data["subreddits"][0]
             state["reddit_used"].append(post_data["angle"])
-        return posted
+            source = f"static:{post_data['angle']}"
+
+        try:
+            submission = reddit.subreddit(sub_name).submit(
+                title=title,
+                selftext=body,
+            )
+            url = f"https://reddit.com{submission.permalink}"
+            log.info(f"Reddit: posted to r/{sub_name} ({source}) {url}")
+            _log_post(state, "reddit", source, url)
+            state["reddit_rotation_idx"] = reddit_idx + 1
+            return True
+        except Exception as e:
+            log.error(f"Reddit: failed to post to r/{sub_name}: {e}")
+            return False
 
     except Exception as e:
         log.error(f"Reddit post failed: {e}")

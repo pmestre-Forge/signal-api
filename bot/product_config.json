@@ -1,0 +1,62 @@
+{
+  "name": "Signal API",
+  "full_name": "Signal API — Trading Signals for AI Agents",
+  "tagline": "Momentum trading signals for AI agents. Pay per call via x402 (USDC on Base).",
+  "url": "https://signal-api-lively-sky-8407.fly.dev",
+  "github_url": "https://github.com/pmestre-Forge/signal-api",
+  "description": "A FastAPI service that serves momentum trading signals (RSI, ADX, MACD, volume ratio, composite score) to AI agents. Agents pay per call in USDC on Base L2 using the x402 protocol. No signup, no API keys, no subscriptions.",
+  "tech_stack": ["FastAPI", "Python", "x402", "USDC", "Base L2", "yfinance"],
+  "features": [
+    "BUY/SELL/HOLD signals with confidence scoring from 4 momentum indicators",
+    "Momentum scanner across 35+ US equities",
+    "Portfolio risk analysis with volatility, drawdown, correlation, Sharpe",
+    "x402 micropayments — $0.005 per signal call in USDC",
+    "No signup, no API keys, no subscriptions — pure machine-to-machine commerce",
+    "Open source, MIT licensed, self-hostable"
+  ],
+  "pricing": {
+    "/signal/{ticker}": "$0.005",
+    "/scan/momentum": "$0.01",
+    "/risk?tickers=X,Y,Z": "$0.01"
+  },
+  "target_audiences": [
+    "AI agent developers building trading bots",
+    "Algo traders using LangChain, CrewAI, AutoGPT",
+    "x402 protocol builders looking for real implementations",
+    "Crypto developers interested in agent-to-agent commerce",
+    "Quantitative developers needing signal APIs"
+  ],
+  "differentiators": [
+    "First trading signal API built natively for AI agent consumption",
+    "x402 micropayments instead of traditional API key auth",
+    "Sub-cent pricing per call, not monthly subscriptions",
+    "Open source reference implementation for x402 monetized APIs"
+  ],
+  "keywords": ["AI agents", "trading signals", "x402", "micropayments", "USDC", "Base L2", "momentum", "RSI", "MACD", "ADX", "FastAPI"],
+  "subreddits": {
+    "r/algotrading": {
+      "angle": "Technical — momentum signals, indicator methodology, open source",
+      "tone": "Developer-to-developer, show the math, link GitHub"
+    },
+    "r/LangChain": {
+      "angle": "Tool for agents — pay-per-call data source, no auth needed",
+      "tone": "Practical, integration-focused, show code snippets"
+    },
+    "r/autonomous_agents": {
+      "angle": "Agent economy infrastructure — machine-to-machine payments",
+      "tone": "Future-looking but grounded, show working product"
+    },
+    "r/ethdev": {
+      "angle": "x402 implementation showcase — Coinbase protocol in practice",
+      "tone": "Technical, protocol-focused, show middleware code"
+    },
+    "r/cryptocurrency": {
+      "angle": "Real utility — AI agents paying for data on-chain",
+      "tone": "Cut through the hype, show actual usage"
+    },
+    "r/artificial": {
+      "angle": "AI agent economy — agents as economic actors",
+      "tone": "Thought leadership with working proof of concept"
+    }
+  }
+}
