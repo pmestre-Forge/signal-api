@@ -5,14 +5,18 @@ Agents pay per call in USDC on Base L2. No signup, no API keys, no subscriptions
 """
 
 import re
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 from x402.http import FacilitatorConfig, HTTPFacilitatorClient, PaymentOption
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 from x402.http.types import RouteConfig
 from x402.mechanisms.evm.exact import ExactEvmServerScheme
 from x402.server import x402ResourceServer
+
+from fastapi.responses import JSONResponse
 
 from config import settings
 from signals import compute_risk, compute_signal, scan_momentum
@@ -93,6 +97,80 @@ def _validate_ticker(ticker: str) -> str:
     if not TICKER_RE.match(t):
         raise HTTPException(status_code=400, detail="Invalid ticker format. Use 1-5 uppercase letters.")
     return t
+
+
+# ---------------------------------------------------------------------------
+# AI Discovery endpoints — how agents find and understand this API
+# ---------------------------------------------------------------------------
+@app.get("/")
+def root(request: Request):
+    """Root endpoint. Serves HTML to browsers, JSON to agents."""
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        html_path = Path(__file__).parent / "static" / "index.html"
+        if html_path.exists():
+            return HTMLResponse(html_path.read_text(encoding="utf-8"))
+    return {
+        "name": "Signal API",
+        "description": "Momentum trading signals for AI agents. Pay per call in USDC via x402.",
+        "version": "1.0.0",
+        "protocol": "x402",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "pricing": "/pricing",
+        "health": "/health",
+        "plugin_manifest": "/.well-known/ai-plugin.json",
+        "github": "https://github.com/pmestre-Forge/signal-api",
+        "endpoints": {
+            "GET /signal/{ticker}": {"price": "$0.005", "description": "Momentum signal for a single stock"},
+            "GET /scan/momentum": {"price": "$0.01", "description": "Top momentum BUY setups from 35+ stocks"},
+            "GET /risk?tickers=X,Y,Z": {"price": "$0.01", "description": "Portfolio risk analysis"},
+        },
+    }
+
+
+@app.get("/.well-known/ai-plugin.json")
+def ai_plugin_manifest():
+    """OpenAI-compatible AI plugin manifest for agent discovery."""
+    return JSONResponse({
+        "schema_version": "v1",
+        "name_for_human": "Signal API - Trading Signals",
+        "name_for_model": "signal_api",
+        "description_for_human": "Get momentum trading signals (RSI, ADX, MACD, volume) for US stocks. Pay per call in USDC.",
+        "description_for_model": "API for retrieving momentum-based trading signals for US equities. Returns BUY/SELL/HOLD with confidence scores, RSI, ADX, MACD, volume ratio, ATR, and composite scoring. Also provides momentum scanning across 35+ tickers and portfolio risk analysis. Payment via x402 protocol (USDC on Base L2). Endpoints: GET /signal/{ticker} for single stock signal, GET /scan/momentum for top setups, GET /risk?tickers=X,Y,Z for portfolio risk.",
+        "auth": {
+            "type": "none",
+            "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
+        },
+        "api": {
+            "type": "openapi",
+            "url": "https://signal-api-lively-sky-8407.fly.dev/openapi.json",
+        },
+        "logo_url": "",
+        "contact_email": "p.mestre@live.com.pt",
+        "legal_info_url": "https://github.com/pmestre-Forge/signal-api/blob/main/README.md",
+    })
+
+
+@app.get("/.well-known/agent.json")
+def agent_manifest():
+    """Google A2A-style agent discovery manifest."""
+    return JSONResponse({
+        "name": "Signal API",
+        "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
+        "url": "https://signal-api-lively-sky-8407.fly.dev",
+        "version": "1.0.0",
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning"],
+        "payment": {
+            "protocol": "x402",
+            "currency": "USDC",
+            "network": "Base L2",
+            "min_price": "$0.005",
+        },
+        "api_spec": "https://signal-api-lively-sky-8407.fly.dev/openapi.json",
+        "authentication": "none",
+        "contact": "p.mestre@live.com.pt",
+    })
 
 
 # ---------------------------------------------------------------------------
