@@ -1,5 +1,5 @@
 """
-Signal API — AI-agent-facing trading signals with x402 micropayments.
+Agent Infrastructure API — trading signals, memory, and identity for AI agents.
 
 Agents pay per call in USDC on Base L2. No signup, no API keys, no subscriptions.
 """
@@ -9,31 +9,32 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from pydantic import BaseModel
 from x402.http import FacilitatorConfig, HTTPFacilitatorClient, PaymentOption
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
 from x402.http.types import RouteConfig
 from x402.mechanisms.evm.exact import ExactEvmServerScheme
 from x402.server import x402ResourceServer
 
-from fastapi.responses import JSONResponse
-
 from config import settings
 from signals import compute_risk, compute_signal, scan_momentum
+from memory import memory_set, memory_get, memory_delete, memory_list, memory_stats
+from identity import register_agent, lookup_agent, search_agents, review_agent, identity_stats
 
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="Signal API",
-    description="Momentum trading signals for AI agents. Pay per call via x402 (USDC on Base).",
-    version="1.0.0",
+    title="Agent Infrastructure API",
+    description="Trading signals, persistent memory, and identity/reputation for AI agents. Pay per call via x402 (USDC on Base).",
+    version="2.0.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "PUT", "DELETE", "POST"],
     allow_headers=["*"],
 )
 
@@ -84,6 +85,38 @@ if settings.evm_address:
         ),
     }
 
+    # Memory endpoints — pay per read/write
+    paid_routes["GET /memory/*/*"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
+        mime_type="application/json", description="Read a value from agent memory.",
+    )
+    paid_routes["PUT /memory/*/*"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
+        mime_type="application/json", description="Write a value to agent memory.",
+    )
+    paid_routes["DELETE /memory/*/*"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
+        mime_type="application/json", description="Delete a value from agent memory.",
+    )
+    paid_routes["GET /memory/*"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
+        mime_type="application/json", description="List keys in a memory namespace.",
+    )
+
+    # Identity endpoints — lookup costs, registration is free
+    paid_routes["GET /identity/lookup/*"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
+        mime_type="application/json", description="Look up an agent's identity and reputation.",
+    )
+    paid_routes["GET /identity/search"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
+        mime_type="application/json", description="Search agents by capability.",
+    )
+    paid_routes["POST /identity/review"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.003", network=settings.network)],
+        mime_type="application/json", description="Leave a reputation review for an agent.",
+    )
+
     app.add_middleware(PaymentMiddlewareASGI, routes=paid_routes, server=x402_server)
 
 # ---------------------------------------------------------------------------
@@ -111,20 +144,32 @@ def root(request: Request):
         if html_path.exists():
             return HTMLResponse(html_path.read_text(encoding="utf-8"))
     return {
-        "name": "Signal API",
-        "description": "Momentum trading signals for AI agents. Pay per call in USDC via x402.",
-        "version": "1.0.0",
+        "name": "Agent Infrastructure API",
+        "description": "Trading signals, persistent memory, and identity/reputation for AI agents.",
+        "version": "2.0.0",
         "protocol": "x402",
         "docs": "/docs",
         "openapi": "/openapi.json",
         "pricing": "/pricing",
         "health": "/health",
-        "plugin_manifest": "/.well-known/ai-plugin.json",
         "github": "https://github.com/pmestre-Forge/signal-api",
-        "endpoints": {
-            "GET /signal/{ticker}": {"price": "$0.005", "description": "Momentum signal for a single stock"},
-            "GET /scan/momentum": {"price": "$0.01", "description": "Top momentum BUY setups from 35+ stocks"},
-            "GET /risk?tickers=X,Y,Z": {"price": "$0.01", "description": "Portfolio risk analysis"},
+        "services": {
+            "signals": {
+                "GET /signal/{ticker}": "$0.005 - Momentum signal",
+                "GET /scan/momentum": "$0.01 - Top BUY setups",
+                "GET /risk?tickers=X,Y": "$0.01 - Portfolio risk",
+            },
+            "memory": {
+                "PUT /memory/{ns}/{key}": "$0.002 - Store value",
+                "GET /memory/{ns}/{key}": "$0.001 - Read value",
+                "GET /memory/{ns}": "$0.002 - List keys",
+            },
+            "identity": {
+                "POST /identity/register": "FREE - Register agent",
+                "GET /identity/lookup/{id}": "$0.001 - Lookup agent",
+                "GET /identity/search": "$0.002 - Search agents",
+                "POST /identity/review": "$0.003 - Leave review",
+            },
         },
     }
 
@@ -200,13 +245,25 @@ def pricing():
     return {
         "currency": "USDC",
         "network": settings.network,
-        "endpoints": {
-            "/signal/{ticker}": f"${settings.price_signal}",
-            "/scan/momentum": f"${settings.price_scan}",
-            "/risk?tickers=X,Y,Z": f"${settings.price_risk}",
-        },
         "protocol": "x402",
         "docs": "https://x402.org",
+        "signals": {
+            "/signal/{ticker}": "$0.005",
+            "/scan/momentum": "$0.01",
+            "/risk?tickers=X,Y,Z": "$0.01",
+        },
+        "memory": {
+            "GET /memory/{ns}/{key}": "$0.001",
+            "PUT /memory/{ns}/{key}": "$0.002",
+            "DELETE /memory/{ns}/{key}": "$0.001",
+            "GET /memory/{ns}": "$0.002",
+        },
+        "identity": {
+            "POST /identity/register": "FREE",
+            "GET /identity/lookup/{id}": "$0.001",
+            "GET /identity/search": "$0.002",
+            "POST /identity/review": "$0.003",
+        },
     }
 
 
@@ -250,3 +307,128 @@ def get_risk(tickers: str = Query(..., description="Comma-separated tickers, e.g
     if result is None:
         raise HTTPException(status_code=404, detail="Could not compute risk for given tickers")
     return result
+
+
+# ---------------------------------------------------------------------------
+# Validation for memory/identity
+# ---------------------------------------------------------------------------
+NS_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
+KEY_RE = re.compile(r"^[a-zA-Z0-9_\-\.]{1,128}$")
+
+
+def _validate_ns(ns: str) -> str:
+    if not NS_RE.match(ns):
+        raise HTTPException(status_code=400, detail="Invalid namespace. Use 1-64 alphanumeric/underscore/dash chars.")
+    return ns
+
+
+def _validate_key(key: str) -> str:
+    if not KEY_RE.match(key):
+        raise HTTPException(status_code=400, detail="Invalid key. Use 1-128 alphanumeric/underscore/dash/dot chars.")
+    return key
+
+
+# ---------------------------------------------------------------------------
+# Memory endpoints — persistent key-value storage for agents
+# ---------------------------------------------------------------------------
+class MemoryWriteBody(BaseModel):
+    value: str
+
+
+@app.get("/memory/stats")
+def get_memory_stats():
+    """Memory service stats. Free."""
+    return memory_stats()
+
+
+@app.get("/memory/{namespace}/{key}")
+def get_memory(namespace: str, key: str):
+    """Read a value from agent memory."""
+    ns = _validate_ns(namespace)
+    k = _validate_key(key)
+    result = memory_get(ns, k)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Key not found: {ns}/{k}")
+    return result
+
+
+@app.put("/memory/{namespace}/{key}")
+def put_memory(namespace: str, key: str, body: MemoryWriteBody):
+    """Write a value to agent memory."""
+    ns = _validate_ns(namespace)
+    k = _validate_key(key)
+    if len(body.value) > 100_000:
+        raise HTTPException(status_code=400, detail="Value too large. Max 100KB.")
+    return memory_set(ns, k, body.value)
+
+
+@app.delete("/memory/{namespace}/{key}")
+def delete_memory(namespace: str, key: str):
+    """Delete a value from agent memory."""
+    ns = _validate_ns(namespace)
+    k = _validate_key(key)
+    deleted = memory_delete(ns, k)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Key not found: {ns}/{k}")
+    return {"deleted": True, "namespace": ns, "key": k}
+
+
+@app.get("/memory/{namespace}")
+def list_memory(namespace: str, limit: int = Query(default=100, ge=1, le=1000)):
+    """List keys in a memory namespace."""
+    ns = _validate_ns(namespace)
+    return memory_list(ns, limit)
+
+
+# ---------------------------------------------------------------------------
+# Identity endpoints — agent registration, lookup, reputation
+# ---------------------------------------------------------------------------
+class RegisterBody(BaseModel):
+    name: str
+    description: str = ""
+    wallet_address: str = ""
+    capabilities: list[str] = []
+
+
+class ReviewBody(BaseModel):
+    reviewer_id: str
+    target_id: str
+    score: float
+    comment: str = ""
+
+
+@app.post("/identity/register")
+def post_register(body: RegisterBody):
+    """Register a new agent identity. Free."""
+    if not body.name or len(body.name) > 100:
+        raise HTTPException(status_code=400, detail="Name required, max 100 chars.")
+    return register_agent(body.name, body.description, body.wallet_address, body.capabilities)
+
+
+@app.get("/identity/lookup/{agent_id}")
+def get_lookup(agent_id: str):
+    """Look up an agent's identity and reputation."""
+    result = lookup_agent(agent_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return result
+
+
+@app.get("/identity/search")
+def get_search(capability: str = Query(default=""), limit: int = Query(default=20, ge=1, le=100)):
+    """Search agents by capability."""
+    return {"results": search_agents(capability, limit)}
+
+
+@app.post("/identity/review")
+def post_review(body: ReviewBody):
+    """Leave a reputation review for an agent."""
+    if body.score < 0 or body.score > 1:
+        raise HTTPException(status_code=400, detail="Score must be 0.0-1.0")
+    return review_agent(body.reviewer_id, body.target_id, body.score, body.comment)
+
+
+@app.get("/identity/stats")
+def get_identity_stats():
+    """Identity service stats. Free."""
+    return identity_stats()
