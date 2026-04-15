@@ -1,0 +1,7 @@
+Signal API Bot
+  Schedule:
+    Health check: 9am + 9pm
+    Daily post:   10am (ALL platforms)
+    Platforms:    Twitter, Dev.to, Reddit (auto-submit), Discord
+2026-04-15 12:36:26,796 [INFO] HTTP Request: GET https://signal-api-lively-sky-8407.fly.dev/health "HTTP/1.1 200 OK"
+[2026-04-15T10:36:26.797785+00:00] API: up
