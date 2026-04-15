@@ -1,0 +1,10 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+x402[fastapi,evm]==2.7.0
+python-dotenv==1.1.0
+yfinance==0.2.54
+pandas==2.2.3
+numpy==2.2.4
+httpx==0.28.1
+pydantic==2.11.1
+pydantic-settings==2.8.1
