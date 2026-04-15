@@ -292,69 +292,33 @@ def star_related_repos(state: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Channel rotation — one post per day, cycles through platforms
+# Daily post — hit ALL platforms once per day
 # ---------------------------------------------------------------------------
-CHANNEL_ROTATION = [
-    "devto",
-    "twitter",
-    "reddit",
-    "discord",
-    "devto",
-    "twitter",
-    "reddit",
-]
-# 7-day cycle: devto, twitter, reddit, discord, devto, twitter, reddit
-# Dev.to and Twitter get 2 slots, Reddit gets 2 slots, Discord gets 1
-
-
 def run_daily_post() -> None:
-    """Post to ONE channel per day, rotating through platforms."""
+    """Post to ALL channels once per day. Different content angle each day."""
     state = _load_state()
     now = datetime.now(timezone.utc).isoformat()
 
-    channel_idx = state.get("channel_idx", 0) % len(CHANNEL_ROTATION)
-    channel = CHANNEL_ROTATION[channel_idx]
+    log.info(f"[{now}] Daily post — all platforms")
 
-    log.info(f"[{now}] Daily post — channel: {channel} (day {channel_idx + 1}/7)")
+    results = {}
+    results["twitter"] = post_twitter(state)
+    results["devto"] = post_devto(state)
+    results["reddit"] = post_reddit_browser(state)
+    results["discord"] = post_discord(state)
 
-    success = False
-    if channel == "twitter":
-        success = post_twitter(state)
-    elif channel == "devto":
-        success = post_devto(state)
-    elif channel == "reddit":
-        success = post_reddit_browser(state)
-    elif channel == "discord":
-        success = post_discord(state)
-
-    # One-time actions (run once then skip)
-    post_github_prs(state)
-    star_related_repos(state)
-
-    state["channel_idx"] = channel_idx + 1
-    _save_state(state)
-
-    status = "OK" if success else "SKIPPED/FAILED"
-    log.info(f"Daily post complete — {channel}: {status}")
-
-
-# Keep old function for manual/testing use
-def run_ads() -> None:
-    """Run full ad cycle across ALL platforms at once (manual use)."""
-    state = _load_state()
-    now = datetime.now(timezone.utc).isoformat()
-
-    log.info(f"[{now}] Full ad cycle starting (all platforms)")
-
-    post_twitter(state)
-    post_devto(state)
-    post_reddit_browser(state)
-    post_discord(state)
+    # One-time actions
     post_github_prs(state)
     star_related_repos(state)
 
     _save_state(state)
-    log.info("Full ad cycle complete")
+
+    summary = ", ".join(f"{k}: {'OK' if v else 'SKIP'}" for k, v in results.items())
+    log.info(f"Daily post complete — {summary}")
+
+
+# Alias for backwards compat
+run_ads = run_daily_post
 
 
 if __name__ == "__main__":

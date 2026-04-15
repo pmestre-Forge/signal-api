@@ -3,3 +3,5 @@ Signal API Bot
     Health check: 9am + 9pm
     Daily post:   10am (one channel per day)
     Rotation:     devto -> twitter -> reddit -> discord -> devto -> twitter -> reddit
+2026-04-15 12:29:02,340 [INFO] HTTP Request: GET https://signal-api-lively-sky-8407.fly.dev/health "HTTP/1.1 200 OK"
+[2026-04-15T10:29:02.342110+00:00] API: up
