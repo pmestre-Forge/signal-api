@@ -1,0 +1,10 @@
+BotWire Bot
+  Schedule:
+    Health:     9am + 9pm
+    Full post:  10am (all platforms, all products)
+    Spotlight:  12pm, 3pm, 6pm (one product, one platform)
+2026-04-16 10:57:17,624 [INFO] HTTP Request: GET https://botwire.dev/health "HTTP/1.1 200 OK"
+2026-04-16 10:57:18,014 [INFO] HTTP Request: GET https://botwire.dev/stats/memory "HTTP/1.1 200 OK"
+2026-04-16 10:57:18,389 [INFO] HTTP Request: GET https://botwire.dev/stats/identity "HTTP/1.1 200 OK"
+2026-04-16 10:57:18,778 [INFO] HTTP Request: GET https://botwire.dev/pricing "HTTP/1.1 200 OK"
+[2026-04-16T08:57:17.172304+00:00] api:up | memory:up | identity:up | context:up
