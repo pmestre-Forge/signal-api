@@ -28,36 +28,56 @@ EXCHANGES = {
 }
 
 # ---------------------------------------------------------------------------
-# Major holidays by country (2026, updatable annually)
-# Format: {country_code: [(month, day, name), ...]}
+# Major holidays by country — fixed-date holidays that repeat every year
+# For moveable holidays (Easter, Thanksgiving), we use year-specific overrides
 # ---------------------------------------------------------------------------
-HOLIDAYS_2026 = {
+FIXED_HOLIDAYS = {
     "US": [
-        (1, 1, "New Year's Day"), (1, 19, "MLK Day"), (2, 16, "Presidents' Day"),
-        (5, 25, "Memorial Day"), (7, 4, "Independence Day"), (9, 7, "Labor Day"),
-        (11, 26, "Thanksgiving"), (12, 25, "Christmas Day"),
+        (1, 1, "New Year's Day"), (7, 4, "Independence Day"),
+        (11, 11, "Veterans Day"), (12, 25, "Christmas Day"),
     ],
     "UK": [
-        (1, 1, "New Year's Day"), (4, 3, "Good Friday"), (4, 6, "Easter Monday"),
-        (5, 4, "Early May Bank Holiday"), (5, 25, "Spring Bank Holiday"),
-        (8, 31, "Summer Bank Holiday"), (12, 25, "Christmas Day"), (12, 28, "Boxing Day (substitute)"),
+        (1, 1, "New Year's Day"), (12, 25, "Christmas Day"), (12, 26, "Boxing Day"),
     ],
     "PT": [
-        (1, 1, "New Year's Day"), (4, 3, "Good Friday"), (4, 5, "Easter Sunday"),
-        (4, 25, "Freedom Day"), (5, 1, "Labour Day"), (6, 4, "Corpus Christi"),
+        (1, 1, "New Year's Day"), (4, 25, "Freedom Day"), (5, 1, "Labour Day"),
         (6, 10, "Portugal Day"), (8, 15, "Assumption"), (10, 5, "Republic Day"),
-        (11, 1, "All Saints' Day"), (12, 1, "Restoration of Independence"), (12, 8, "Immaculate Conception"),
-        (12, 25, "Christmas Day"),
+        (11, 1, "All Saints' Day"), (12, 1, "Restoration of Independence"),
+        (12, 8, "Immaculate Conception"), (12, 25, "Christmas Day"),
     ],
     "JP": [
-        (1, 1, "New Year's Day"), (1, 12, "Coming of Age Day"), (2, 11, "National Foundation Day"),
-        (2, 23, "Emperor's Birthday"), (3, 20, "Vernal Equinox Day"), (4, 29, "Showa Day"),
-        (5, 3, "Constitution Memorial Day"), (5, 4, "Greenery Day"), (5, 5, "Children's Day"),
-        (7, 20, "Marine Day"), (8, 11, "Mountain Day"), (9, 21, "Respect for the Aged Day"),
-        (9, 23, "Autumnal Equinox"), (10, 12, "Sports Day"), (11, 3, "Culture Day"),
-        (11, 23, "Labour Thanksgiving"), (12, 23, "Emperor's Birthday"),
+        (1, 1, "New Year's Day"), (2, 11, "National Foundation Day"),
+        (2, 23, "Emperor's Birthday"), (4, 29, "Showa Day"),
+        (5, 3, "Constitution Memorial Day"), (5, 4, "Greenery Day"),
+        (5, 5, "Children's Day"), (8, 11, "Mountain Day"),
+        (11, 3, "Culture Day"), (11, 23, "Labour Thanksgiving"),
     ],
 }
+
+# Year-specific moveable holidays (add new years as needed, Forgemaster should update annually)
+MOVEABLE_HOLIDAYS = {
+    2026: {
+        "US": [(1, 19, "MLK Day"), (2, 16, "Presidents' Day"), (5, 25, "Memorial Day"),
+               (9, 7, "Labor Day"), (11, 26, "Thanksgiving")],
+        "UK": [(4, 3, "Good Friday"), (4, 6, "Easter Monday"), (5, 4, "Early May Bank Holiday"),
+               (5, 25, "Spring Bank Holiday"), (8, 31, "Summer Bank Holiday")],
+        "PT": [(4, 3, "Good Friday"), (4, 5, "Easter Sunday"), (6, 4, "Corpus Christi")],
+    },
+    2027: {
+        "US": [(1, 18, "MLK Day"), (2, 15, "Presidents' Day"), (5, 31, "Memorial Day"),
+               (9, 6, "Labor Day"), (11, 25, "Thanksgiving")],
+        "UK": [(3, 26, "Good Friday"), (3, 29, "Easter Monday"), (5, 3, "Early May Bank Holiday"),
+               (5, 31, "Spring Bank Holiday"), (8, 30, "Summer Bank Holiday")],
+        "PT": [(3, 26, "Good Friday"), (3, 28, "Easter Sunday"), (5, 27, "Corpus Christi")],
+    },
+}
+
+
+def _get_holidays(country: str, year: int) -> list[tuple]:
+    """Get combined fixed + moveable holidays for a country and year."""
+    fixed = FIXED_HOLIDAYS.get(country, [])
+    moveable = MOVEABLE_HOLIDAYS.get(year, {}).get(country, [])
+    return sorted(fixed + moveable, key=lambda h: (h[0], h[1]))
 
 # Timezone aliases — map common names to IANA identifiers
 TZ_ALIASES = {
@@ -118,11 +138,11 @@ def _market_status(exchange: dict, now_utc: datetime) -> dict:
 
 def _next_holiday(country: str, now: datetime) -> dict | None:
     """Get next upcoming holiday for a country."""
-    holidays = HOLIDAYS_2026.get(country)
+    year = now.year
+    holidays = _get_holidays(country, year)
     if not holidays:
         return None
 
-    year = now.year
     for month, day, name in holidays:
         try:
             hdate = datetime(year, month, day)
@@ -131,6 +151,17 @@ def _next_holiday(country: str, now: datetime) -> dict | None:
                 return {"date": hdate.strftime("%Y-%m-%d"), "name": name, "days_until": days_until}
         except ValueError:
             continue
+
+    # Check next year if no remaining holidays this year
+    next_holidays = _get_holidays(country, year + 1)
+    if next_holidays:
+        month, day, name = next_holidays[0]
+        try:
+            hdate = datetime(year + 1, month, day)
+            days_until = (hdate.date() - now.date()).days
+            return {"date": hdate.strftime("%Y-%m-%d"), "name": name, "days_until": days_until}
+        except ValueError:
+            pass
     return None
 
 

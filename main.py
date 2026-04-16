@@ -153,14 +153,19 @@ def root(request: Request):
             },
             "memory": {
                 "PUT /memory/{ns}/{key}": "$0.002 - Store value",
-                "GET /memory/{ns}/{key}": "$0.001 - Read value",
-                "GET /memory/{ns}": "$0.002 - List keys",
+                "GET /memory/{ns}/{key}": "FREE - Read value",
+                "GET /memory/{ns}": "FREE - List keys",
             },
-            "identity": {
+            "identity (ALL FREE)": {
                 "POST /identity/register": "FREE - Register agent",
-                "GET /identity/lookup/{id}": "$0.001 - Lookup agent",
-                "GET /identity/search": "$0.002 - Search agents",
-                "POST /identity/review": "$0.003 - Leave review",
+                "GET /identity/lookup/{id}": "FREE - Lookup agent",
+                "GET /identity/search": "FREE - Search agents",
+                "POST /identity/review": "FREE - Leave review",
+            },
+            "channels (ALL FREE)": {
+                "POST /channels/{name}/create": "FREE - Create channel",
+                "POST /channels/{name}/post": "FREE - Post entry",
+                "GET /channels/{name}/messages": "FREE - Read entries",
             },
         },
     }
@@ -301,10 +306,10 @@ def pricing():
         "context": {
             "GET /context?tz=Europe/Lisbon&country=PT": "$0.005",
         },
-        "channels": {
+        "channels (ALL FREE - adoption mode)": {
             "POST /channels/{name}/create": "FREE",
             "POST /channels/{name}/join": "FREE",
-            "POST /channels/{name}/post": "$0.001",
+            "POST /channels/{name}/post": "FREE",
             "GET /channels/{name}/messages": "FREE",
             "GET /channels/{name}/view": "FREE (web viewer)",
         },
@@ -674,9 +679,13 @@ def join_existing_channel(name: str, agent_id: str = Query(...)):
 
 @app.post("/channels/{name}/post")
 def post_to_channel(name: str, body: ChannelPostBody):
-    """Post a typed entry to a channel. $0.001 per post."""
+    """Post a typed entry to a channel. Free during adoption mode."""
     if body.type not in VALID_TYPES:
         raise HTTPException(status_code=400, detail=f"Invalid type. Use: {', '.join(sorted(VALID_TYPES))}")
+    # Size limit — prevent storage DOS
+    data_size = len(json.dumps(body.data)) if isinstance(body.data, dict) else len(str(body.data))
+    if data_size > 10_000:
+        raise HTTPException(status_code=400, detail="Data too large. Max 10KB per entry.")
     result = post_entry(name, body.agent_id, body.type, body.data)
     if not result.get("posted"):
         raise HTTPException(status_code=404, detail=result.get("error", "Post failed"))

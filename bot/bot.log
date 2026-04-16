@@ -8,3 +8,30 @@ Signal API Bot
 2026-04-16 09:12:48,263 [INFO] HTTP Request: GET https://botwire.dev/stats/identity "HTTP/1.1 200 OK"
 2026-04-16 09:12:48,611 [INFO] HTTP Request: GET https://botwire.dev/pricing "HTTP/1.1 200 OK"
 [2026-04-16T07:12:47.061031+00:00] api:up | memory:up | identity:up | context:up
+2026-04-16 10:00:48,646 [INFO] [2026-04-16T08:00:48.646036+00:00] Daily post — all platforms
+2026-04-16 10:00:48,945 [INFO] TwitterPublisher initialized for @PedroForge
+2026-04-16 10:00:48,946 [INFO] Posting thread tweet 1/3
+2026-04-16 10:00:48,946 [INFO] Posting tweet (210 chars): x402 is Coinbase's protocol for AI agent micropayments.
+
+I b...
+2026-04-16 10:00:49,157 [ERROR] HTTP error posting tweet: {
+  "account_id": 2036473238155317248,
+  "title": "CreditsDepleted",
+  "detail": "Your enrolled account [2036473238155317248] does not have any credits to fulfill this request.",
+  "type": "https://api.twitter.com/2/problems/credits"
+}
+2026-04-16 10:00:49,157 [ERROR] Twitter post failed: 402 Client Error: Payment Required for url: https://api.twitter.com/2/tweets
+2026-04-16 10:00:49,158 [INFO] DevtoPublisher initialized successfully
+2026-04-16 10:00:49,159 [INFO] Publishing article: The AI Agent Economy Needs Payment Rails — Here's What I Built (published=True)
+2026-04-16 10:00:49,789 [INFO] Article published successfully: 3509041 - https://dev.to/pmestreforge/the-ai-agent-economy-needs-payment-rails-heres-what-i-built-3pna
+2026-04-16 10:00:49,789 [INFO] Dev.to: published (static:agent-economy) https://dev.to/pmestreforge/the-ai-agent-economy-needs-payment-rails-heres-what-i-built-3pna
+2026-04-16 10:00:49,807 [INFO] Reddit: posting to r/algotrading (static:algotrading)
+2026-04-16 10:00:49,887 [INFO] Reddit: opened r/algotrading submit page in browser
+2026-04-16 10:00:50,441 [INFO] HTTP Request: POST https://discord.com/api/webhooks/1493915371135303752/J94lVP79rO1oSI95XwyPP2L3TuZlHkf3cGBdWNAt3wbi7IJDHyDry6_MW8Cl62LH_iAU "HTTP/1.1 204 No Content"
+2026-04-16 10:00:50,443 [INFO] Reddit: Discord notification sent
+2026-04-16 10:00:51,063 [INFO] HTTP Request: POST https://discord.com/api/webhooks/1493915371135303752/J94lVP79rO1oSI95XwyPP2L3TuZlHkf3cGBdWNAt3wbi7IJDHyDry6_MW8Cl62LH_iAU "HTTP/1.1 204 No Content"
+2026-04-16 10:00:51,064 [INFO] Discord: posted (angle=bittensor)
+2026-04-16 10:00:51,156 [WARNING] GitHub: fork failed for xpaysh/awesome-x402: To get started with GitHub CLI, please run:  gh auth login
+Alternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token.
+
+2026-04-16 10:00:51,157 [INFO] Daily post complete — twitter: SKIP, devto: OK, reddit: OK, discord: OK

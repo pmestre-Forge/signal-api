@@ -59,9 +59,10 @@ def _generate_id(name: str, wallet: str) -> str:
 def register_agent(name: str, description: str = "", wallet_address: str = "", capabilities: list = None) -> dict:
     """Register a new agent identity. Free."""
     conn = _get_conn()
+    import json
     agent_id = _generate_id(name, wallet_address)
     now = time.time()
-    caps = str(capabilities or [])
+    caps = json.dumps(capabilities or [])
 
     try:
         conn.execute(
@@ -111,6 +112,7 @@ def lookup_agent(agent_id: str) -> Optional[dict]:
 
 def search_agents(capability: str = "", limit: int = 20) -> list[dict]:
     """Search agents by capability."""
+    limit = max(1, min(limit, 100))  # Cap at 100 to prevent DB dump
     conn = _get_conn()
     if capability:
         rows = conn.execute(
@@ -141,15 +143,31 @@ def review_agent(reviewer_id: str, target_id: str, score: float, comment: str = 
     score = max(0.0, min(1.0, score))
     now = time.time()
 
+    # Verify reviewer exists (prevent spoofing)
+    reviewer = conn.execute("SELECT agent_id FROM agents WHERE agent_id=? OR name=?", (reviewer_id, reviewer_id)).fetchone()
+    if not reviewer:
+        return {"error": "Reviewer agent not found — must be registered", "reviewed": False}
+
     # Check target exists
     target = conn.execute("SELECT agent_id FROM agents WHERE agent_id=?", (target_id,)).fetchone()
     if not target:
         return {"error": "Target agent not found", "reviewed": False}
 
-    conn.execute(
-        "INSERT INTO reviews (reviewer_id, target_id, score, comment, created_at) VALUES (?, ?, ?, ?, ?)",
-        (reviewer_id, target_id, score, comment, now),
-    )
+    # One review per reviewer-target pair (prevent spam)
+    existing = conn.execute(
+        "SELECT id FROM reviews WHERE reviewer_id=? AND target_id=?", (reviewer_id, target_id)
+    ).fetchone()
+    if existing:
+        # Update existing review instead of adding duplicate
+        conn.execute(
+            "UPDATE reviews SET score=?, comment=?, created_at=? WHERE reviewer_id=? AND target_id=?",
+            (score, comment, now, reviewer_id, target_id),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO reviews (reviewer_id, target_id, score, comment, created_at) VALUES (?, ?, ?, ?, ?)",
+            (reviewer_id, target_id, score, comment, now),
+        )
 
     # Recalculate reputation as average of all reviews
     avg = conn.execute("SELECT AVG(score) FROM reviews WHERE target_id=?", (target_id,)).fetchone()[0]
