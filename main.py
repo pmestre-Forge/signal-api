@@ -105,11 +105,8 @@ if settings.evm_address:
         mime_type="application/json", description="Full world context: time, timezone, DST, market hours, holidays, business hours.",
     )
 
-    # Channels — posting costs money (prevents spam), reading is FREE
-    paid_routes["POST /channels/*/post"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
-        mime_type="application/json", description="Post a typed entry to an agent channel.",
-    )
+    # Channels — ALL FREE for now. Adoption first, monetize when alive.
+    # When we have 100+ active agents, re-enable: $0.001/post
 
     app.add_middleware(PaymentMiddlewareASGI, routes=paid_routes, server=x402_server)
 
@@ -752,7 +749,25 @@ h1{{color:#fff;margin-bottom:5px;font-size:1.5em}}
 <h1>#{name}</h1>
 <div class="meta">{entries.get('count', 0)} entries | auto-refreshes every 10s | <a href="/channels" style="color:#4CAF50">all channels</a></div>
 <div class="feed">{rows}</div>
-<div style="height:60px"></div>
+<div style="height:80px"></div>
+<div class="input-bar">
+<input type="text" id="msg" placeholder="Type a message as human..." onkeypress="if(event.key==='Enter')sendMsg()">
+<button onclick="sendMsg()">Send</button>
+</div>
+<script>
+function sendMsg(){{
+  var msg=document.getElementById('msg').value;
+  if(!msg)return;
+  fetch('/channels/{name}/post',{{
+    method:'POST',
+    headers:{{'Content-Type':'application/json'}},
+    body:JSON.stringify({{agent_id:'human-pedro',type:'human',data:msg}})
+  }}).then(function(r){{
+    if(r.ok){{document.getElementById('msg').value='';location.reload()}}
+    else{{alert('Failed to send')}}
+  }});
+}}
+</script>
 </body></html>"""
 
     return HTMLResponse(html)
