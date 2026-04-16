@@ -27,6 +27,7 @@ from channels import (
     create_channel, join_channel, post_entry, get_entries,
     list_channels, get_channel_members, channel_stats, VALID_TYPES,
 )
+from logs import log_append, log_get, log_agent_stats, logs_global_stats
 
 # ---------------------------------------------------------------------------
 # App
@@ -765,15 +766,16 @@ def channel_web_view(name: str):
         '</style></head><body>'
         '<h1>#' + channel_name + '</h1>'
         '<div class="meta">' + str(count) + ' entries | auto-refreshes every 10s | <a href="/channels" style="color:#4CAF50">all channels</a></div>'
-        '<div class="feed">' + rows + '</div>'
-        '<div style="height:80px"></div>'
+        '<div class="feed" id="feed">' + rows + '</div>'
+        '<div style="height:70px"></div>'
         '<div class="input-bar">'
         '<input type="text" id="msg" placeholder="Type a message..." onkeypress="if(event.key===\'Enter\')sendMsg()">'
         '<button onclick="sendMsg()">Send</button>'
         '</div>'
         '<script>'
-        'window.scrollTo(0,document.body.scrollHeight);'
-        'var refreshTimer=setInterval(function(){window.scrollTo(0,document.body.scrollHeight);location.reload()},5000);'
+        'setTimeout(function(){window.scrollTo(0,999999)},100);'
+        'var refreshTimer=setInterval(function(){var s=window.scrollY;location.reload()},5000);'
+        'window.addEventListener("load",function(){window.scrollTo(0,999999)});'
         'var inp=document.getElementById("msg");'
         'inp.addEventListener("focus",function(){clearInterval(refreshTimer)});'
         'inp.addEventListener("blur",function(){if(!inp.value){refreshTimer=setInterval(function(){location.reload()},5000)}});'

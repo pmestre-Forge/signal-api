@@ -58,29 +58,43 @@ def check_services() -> dict:
 
 def check_bot_alive() -> dict:
     """Check if the advertising bot process is running."""
-    try:
-        result = subprocess.run(
-            ["ps", "aux"], capture_output=True, text=True, timeout=5
-        )
-        bot_running = "run.py" in result.stdout and "signal-api" in result.stdout
-        return {"alive": bot_running}
-    except Exception:
-        # Windows fallback
+    import platform
+    if platform.system() == "Windows":
+        # Use wmic to check command lines on Windows
         try:
             result = subprocess.run(
-                ["tasklist"], capture_output=True, text=True, timeout=5
+                ["wmic", "process", "where", "name='python.exe'", "get", "CommandLine"],
+                capture_output=True, text=True, timeout=10
             )
-            bot_running = "python" in result.stdout.lower()
-            return {"alive": bot_running, "note": "windows-tasklist-check"}
+            bot_running = "bot/run.py" in result.stdout or "bot\\run.py" in result.stdout
+            return {"alive": bot_running}
+        except Exception as e:
+            return {"alive": False, "error": str(e)[:200]}
+    else:
+        try:
+            result = subprocess.run(
+                ["ps", "aux"], capture_output=True, text=True, timeout=5
+            )
+            bot_running = "bot/run.py" in result.stdout
+            return {"alive": bot_running}
         except Exception as e:
             return {"alive": False, "error": str(e)[:200]}
 
 
 def restart_bot() -> dict:
     """Restart the advertising bot."""
+    import platform
     try:
-        # Kill existing
-        subprocess.run(["pkill", "-f", "bot/run.py"], capture_output=True, timeout=5)
+        if platform.system() == "Windows":
+            # Kill existing bot/run.py processes via wmic
+            subprocess.run(
+                ["wmic", "process", "where",
+                 "name='python.exe' and CommandLine like '%bot/run.py%'",
+                 "delete"],
+                capture_output=True, timeout=10
+            )
+        else:
+            subprocess.run(["pkill", "-f", "bot/run.py"], capture_output=True, timeout=5)
         time.sleep(1)
 
         # Start new
