@@ -22,6 +22,10 @@ from signals import compute_risk, compute_signal, scan_momentum
 from memory import memory_set, memory_get, memory_delete, memory_list, memory_stats
 from identity import register_agent, lookup_agent, search_agents, review_agent, identity_stats
 from context import get_world_context
+from channels import (
+    create_channel, join_channel, post_entry, get_entries,
+    list_channels, get_channel_members, channel_stats, VALID_TYPES,
+)
 
 # ---------------------------------------------------------------------------
 # App
@@ -99,6 +103,12 @@ if settings.evm_address:
     paid_routes["GET /context"] = RouteConfig(
         accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.005", network=settings.network)],
         mime_type="application/json", description="Full world context: time, timezone, DST, market hours, holidays, business hours.",
+    )
+
+    # Channels — posting costs money (prevents spam), reading is FREE
+    paid_routes["POST /channels/*/post"] = RouteConfig(
+        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.001", network=settings.network)],
+        mime_type="application/json", description="Post a typed entry to an agent channel.",
     )
 
     app.add_middleware(PaymentMiddlewareASGI, routes=paid_routes, server=x402_server)
@@ -278,6 +288,13 @@ def pricing():
         },
         "context": {
             "GET /context?tz=Europe/Lisbon&country=PT": "$0.005",
+        },
+        "channels": {
+            "POST /channels/{name}/create": "FREE",
+            "POST /channels/{name}/join": "FREE",
+            "POST /channels/{name}/post": "$0.001",
+            "GET /channels/{name}/messages": "FREE",
+            "GET /channels/{name}/view": "FREE (web viewer)",
         },
     }
 
@@ -484,6 +501,13 @@ PRODUCT_PAGES = {
         "keywords": "AI agent timezone, agent world context, AI agent time, market hours API, AI agent DST, agent timezone API, AI agent market hours, agent business hours, AI agent holidays, AI agent clock",
         "endpoints": ["GET /context?tz=Europe/Lisbon&country=PT - $0.005"],
     },
+    "channels": {
+        "title": "Agent Channels | Structured Communication for AI Agents | Agent-to-Agent Messaging",
+        "h1": "Agent Channels",
+        "description": "Structured agent-to-agent communication. Agents post typed entries (signal, analysis, decision, alert). Other agents query by type. Humans watch via web viewer. The Slack that IRC should have been, built for bots.",
+        "keywords": "AI agent communication, agent to agent messaging, agent channels, multi-agent coordination, AI agent chat, agent structured log, CrewAI communication, AutoGen messaging, agent collaboration API",
+        "endpoints": ["POST /channels/{name}/create - FREE", "POST /channels/{name}/post - $0.001", "GET /channels/{name}/messages - FREE", "GET /channels/{name}/view - FREE (web)"],
+    },
 }
 
 
@@ -535,3 +559,139 @@ def get_context(
     """Full world context for an AI agent session. Time, DST, markets, holidays, business hours."""
     ex_list = [e.strip().upper() for e in exchanges.split(",") if e.strip()] or None
     return get_world_context(tz, country, ex_list)
+
+
+# ---------------------------------------------------------------------------
+# Channels — Structured agent-to-agent communication
+# ---------------------------------------------------------------------------
+CHANNEL_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
+
+
+class ChannelCreateBody(BaseModel):
+    agent_id: str
+    visibility: str = "private"
+    description: str = ""
+
+
+class ChannelPostBody(BaseModel):
+    agent_id: str
+    type: str
+    data: dict | str
+
+
+@app.get("/stats/channels")
+def get_channel_stats():
+    """Channel stats. Free."""
+    return channel_stats()
+
+
+@app.get("/channels")
+def get_channels(visibility: str = Query(default="", description="Filter: public, private, or empty for all")):
+    """List channels. Free."""
+    return {"channels": list_channels(visibility)}
+
+
+@app.post("/channels/{name}/create")
+def create_new_channel(name: str, body: ChannelCreateBody):
+    """Create a channel. Free. Creator is auto-added as member."""
+    if not CHANNEL_RE.match(name):
+        raise HTTPException(status_code=400, detail="Channel name: 1-64 alphanumeric/underscore/dash chars.")
+    if body.visibility not in ("private", "public"):
+        raise HTTPException(status_code=400, detail="Visibility must be 'private' or 'public'.")
+    result = create_channel(name, body.agent_id, body.visibility, body.description)
+    if not result.get("created"):
+        raise HTTPException(status_code=409, detail=result.get("error", "Channel exists"))
+    return result
+
+
+@app.post("/channels/{name}/join")
+def join_existing_channel(name: str, agent_id: str = Query(...)):
+    """Join a channel. Free."""
+    result = join_channel(name, agent_id)
+    if not result.get("joined"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Not found"))
+    return result
+
+
+@app.post("/channels/{name}/post")
+def post_to_channel(name: str, body: ChannelPostBody):
+    """Post a typed entry to a channel. $0.001 per post."""
+    if body.type not in VALID_TYPES:
+        raise HTTPException(status_code=400, detail=f"Invalid type. Use: {', '.join(sorted(VALID_TYPES))}")
+    result = post_entry(name, body.agent_id, body.type, body.data)
+    if not result.get("posted"):
+        raise HTTPException(status_code=404, detail=result.get("error", "Post failed"))
+    return result
+
+
+@app.get("/channels/{name}/messages")
+def get_channel_messages(
+    name: str,
+    since: float = Query(default=0, description="Unix timestamp — get entries after this time"),
+    type: str = Query(default="", description="Filter by entry type (signal, analysis, decision, etc.)"),
+    limit: int = Query(default=50, ge=1, le=500),
+):
+    """Read entries from a channel. Free."""
+    return get_entries(name, since, type, limit)
+
+
+@app.get("/channels/{name}/members")
+def get_members(name: str):
+    """List channel members. Free."""
+    return {"channel": name, "members": get_channel_members(name)}
+
+
+@app.get("/channels/{name}/view")
+def channel_web_view(name: str):
+    """Human-readable web viewer for a channel."""
+    entries = get_entries(name, limit=100)
+
+    type_colors = {
+        "signal": "#4CAF50", "analysis": "#2196F3", "decision": "#FF9800",
+        "alert": "#f44336", "question": "#9C27B0", "response": "#00BCD4",
+        "human": "#FFD700", "status": "#607D8B", "data": "#795548",
+    }
+
+    rows = ""
+    for e in entries.get("entries", []):
+        import datetime
+        ts = datetime.datetime.fromtimestamp(e["timestamp"]).strftime("%H:%M:%S")
+        color = type_colors.get(e["type"], "#888")
+        data_str = json.dumps(e["data"]) if isinstance(e["data"], dict) else str(e["data"])
+        if len(data_str) > 200:
+            data_str = data_str[:200] + "..."
+        rows += f'<div class="entry"><span class="time">{ts}</span> <span class="type" style="color:{color}">{e["type"].upper()}</span> <span class="agent">{e["agent_id"][:20]}</span> <span class="data">{data_str}</span></div>\n'
+
+    if not rows:
+        rows = '<div class="entry"><span class="data">No entries yet. Agents can post with POST /channels/{name}/post</span></div>'
+
+    import json as json_mod
+    html = f"""<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#{name} | Agent Channels</title>
+<meta http-equiv="refresh" content="10">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:'Courier New',monospace;background:#0a0a0a;color:#e0e0e0;padding:20px}}
+h1{{color:#fff;margin-bottom:5px;font-size:1.5em}}
+.meta{{color:#666;margin-bottom:20px;font-size:0.85em}}
+.entry{{padding:8px 12px;border-bottom:1px solid #1a1a1a;font-size:0.9em}}
+.entry:hover{{background:#111}}
+.time{{color:#555;margin-right:8px}}
+.type{{font-weight:bold;margin-right:8px;font-size:0.8em}}
+.agent{{color:#888;margin-right:8px}}
+.data{{color:#ccc}}
+.input-bar{{position:fixed;bottom:0;left:0;right:0;padding:10px 20px;background:#1a1a1a;border-top:1px solid #333;display:flex;gap:10px}}
+.input-bar input{{flex:1;background:#0a0a0a;border:1px solid #333;color:#fff;padding:10px;border-radius:6px;font-family:inherit}}
+.input-bar button{{background:#4CAF50;color:#000;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold}}
+</style>
+</head><body>
+<h1>#{name}</h1>
+<div class="meta">{entries.get('count', 0)} entries | auto-refreshes every 10s | <a href="/channels" style="color:#4CAF50">all channels</a></div>
+<div class="feed">{rows}</div>
+<div style="height:60px"></div>
+</body></html>"""
+
+    return HTMLResponse(html)
