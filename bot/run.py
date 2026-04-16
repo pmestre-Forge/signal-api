@@ -1,10 +1,10 @@
 """
-Main bot runner.
+BotWire Bot Runner — 2 posting schedules + health checks + channel bot.
 
-    python run.py              # Run on schedule (all platforms daily, 2 health checks)
+    python run.py              # Run everything on schedule
     python run.py --monitor    # One-shot health check
-    python run.py --post       # One-shot daily post (all platforms)
-    python run.py --status     # Show what's been posted
+    python run.py --post       # One-shot post cycle
+    python run.py --status     # Show posting history
 """
 
 import json
@@ -16,6 +16,39 @@ import schedule
 from advertise import run_daily_post
 from config import STATE_FILE
 from monitor import run_check
+
+# Import product-specific posting
+from generate import _today_product, PRODUCT_ROTATION
+
+
+def post_product_spotlight():
+    """Post about a specific product feature/use case. Runs 3x daily."""
+    from advertise import post_discord, post_devto, _load_state, _save_state
+    import random
+
+    state = _load_state()
+    product = _today_product()
+
+    # Pick one platform per spotlight
+    platforms = ["discord", "devto"]
+    platform = random.choice(platforms)
+
+    if platform == "discord":
+        from content import DISCORD_POSTS, format_content
+        from config import API_URL, GITHUB_REPO, DISCORD_WEBHOOK_URL
+        import httpx
+
+        if DISCORD_WEBHOOK_URL:
+            msg = f"**{product['name']}** -- {product['focus']}\n\nTry it: {API_URL}\nDocs: {API_URL}/docs"
+            try:
+                httpx.post(DISCORD_WEBHOOK_URL, json={"content": msg}, timeout=10)
+            except Exception:
+                pass
+
+    elif platform == "devto":
+        post_devto(state)
+
+    _save_state(state)
 
 
 def cmd_status():
@@ -52,20 +85,25 @@ def main():
         cmd_status()
         return
 
-    print("Signal API Bot", flush=True)
+    print("BotWire Bot", flush=True)
     print("  Schedule:", flush=True)
-    print("    Health check: 9am + 9pm", flush=True)
-    print("    Daily post:   10am (ALL platforms)", flush=True)
-    print("    Platforms:    Twitter, Dev.to, Reddit (auto-submit), Discord", flush=True)
+    print("    Health:     9am + 9pm", flush=True)
+    print("    Full post:  10am (all platforms, all products)", flush=True)
+    print("    Spotlight:  12pm, 3pm, 6pm (one product, one platform)", flush=True)
 
-    # Health checks at 9am and 9pm
+    # Health checks
     schedule.every().day.at("09:00").do(run_check)
     schedule.every().day.at("21:00").do(run_check)
 
-    # All platforms once per day at 10am
+    # Full post — all platforms at 10am
     schedule.every().day.at("10:00").do(run_daily_post)
 
-    # Run health check on start
+    # Product spotlights — 3x daily
+    schedule.every().day.at("12:00").do(post_product_spotlight)
+    schedule.every().day.at("15:00").do(post_product_spotlight)
+    schedule.every().day.at("18:00").do(post_product_spotlight)
+
+    # Health check on start
     run_check()
 
     while True:
