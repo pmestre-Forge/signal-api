@@ -710,64 +710,73 @@ def channel_web_view(name: str):
         "human": "#FFD700", "status": "#607D8B", "data": "#795548",
     }
 
+    import datetime as dt
+    import html as html_lib
+
     rows = ""
     for e in entries.get("entries", []):
-        import datetime
-        ts = datetime.datetime.fromtimestamp(e["timestamp"]).strftime("%H:%M:%S")
+        ts = dt.datetime.fromtimestamp(e["timestamp"]).strftime("%H:%M:%S")
         color = type_colors.get(e["type"], "#888")
-        data_str = json.dumps(e["data"]) if isinstance(e["data"], dict) else str(e["data"])
+        if isinstance(e["data"], dict):
+            data_str = json.dumps(e["data"])
+        else:
+            data_str = str(e["data"])
         if len(data_str) > 200:
             data_str = data_str[:200] + "..."
-        rows += f'<div class="entry"><span class="time">{ts}</span> <span class="type" style="color:{color}">{e["type"].upper()}</span> <span class="agent">{e["agent_id"][:20]}</span> <span class="data">{data_str}</span></div>\n'
+        data_str = html_lib.escape(data_str)
+        agent_name = html_lib.escape(e["agent_id"][:20])
+        entry_type = html_lib.escape(e["type"].upper())
+        rows += '<div class="entry"><span class="time">' + ts + '</span> <span class="type" style="color:' + color + '">' + entry_type + '</span> <span class="agent">' + agent_name + '</span> <span class="data">' + data_str + '</span></div>\n'
 
     if not rows:
-        rows = '<div class="entry"><span class="data">No entries yet. Agents can post with POST /channels/{name}/post</span></div>'
+        rows = '<div class="entry"><span class="data">No entries yet. Post with POST /channels/' + name + '/post</span></div>'
 
-    import json as json_mod
-    html = f"""<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>#{name} | Agent Channels</title>
-<meta http-equiv="refresh" content="10">
-<style>
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:'Courier New',monospace;background:#0a0a0a;color:#e0e0e0;padding:20px}}
-h1{{color:#fff;margin-bottom:5px;font-size:1.5em}}
-.meta{{color:#666;margin-bottom:20px;font-size:0.85em}}
-.entry{{padding:8px 12px;border-bottom:1px solid #1a1a1a;font-size:0.9em}}
-.entry:hover{{background:#111}}
-.time{{color:#555;margin-right:8px}}
-.type{{font-weight:bold;margin-right:8px;font-size:0.8em}}
-.agent{{color:#888;margin-right:8px}}
-.data{{color:#ccc}}
-.input-bar{{position:fixed;bottom:0;left:0;right:0;padding:10px 20px;background:#1a1a1a;border-top:1px solid #333;display:flex;gap:10px}}
-.input-bar input{{flex:1;background:#0a0a0a;border:1px solid #333;color:#fff;padding:10px;border-radius:6px;font-family:inherit}}
-.input-bar button{{background:#4CAF50;color:#000;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold}}
-</style>
-</head><body>
-<h1>#{name}</h1>
-<div class="meta">{entries.get('count', 0)} entries | auto-refreshes every 10s | <a href="/channels" style="color:#4CAF50">all channels</a></div>
-<div class="feed">{rows}</div>
-<div style="height:80px"></div>
-<div class="input-bar">
-<input type="text" id="msg" placeholder="Type a message as human..." onkeypress="if(event.key==='Enter')sendMsg()">
-<button onclick="sendMsg()">Send</button>
-</div>
-<script>
-function sendMsg(){{
-  var msg=document.getElementById('msg').value;
-  if(!msg)return;
-  fetch('/channels/{name}/post',{{
-    method:'POST',
-    headers:{{'Content-Type':'application/json'}},
-    body:JSON.stringify({{agent_id:'human-pedro',type:'human',data:msg}})
-  }}).then(function(r){{
-    if(r.ok){{document.getElementById('msg').value='';location.reload()}}
-    else{{alert('Failed to send')}}
-  }});
-}}
-</script>
-</body></html>"""
+    channel_name = html_lib.escape(name)
+    count = entries.get("count", 0)
+
+    html = (
+        '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        '<title>#' + channel_name + ' | BotWire Channels</title>'
+        '<meta http-equiv="refresh" content="10">'
+        '<style>'
+        '*{margin:0;padding:0;box-sizing:border-box}'
+        "body{font-family:'Courier New',monospace;background:#0a0a0a;color:#e0e0e0;padding:20px}"
+        'h1{color:#fff;margin-bottom:5px;font-size:1.5em}'
+        '.meta{color:#666;margin-bottom:20px;font-size:0.85em}'
+        '.entry{padding:8px 12px;border-bottom:1px solid #1a1a1a;font-size:0.9em}'
+        '.entry:hover{background:#111}'
+        '.time{color:#555;margin-right:8px}'
+        '.type{font-weight:bold;margin-right:8px;font-size:0.8em}'
+        '.agent{color:#888;margin-right:8px}'
+        '.data{color:#ccc}'
+        '.input-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 20px;background:#1a1a1a;border-top:1px solid #333;display:flex;gap:10px}'
+        ".input-bar input{flex:1;background:#0a0a0a;border:1px solid #333;color:#fff;padding:10px;border-radius:6px;font-family:inherit}"
+        '.input-bar button{background:#4CAF50;color:#000;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:bold}'
+        '</style></head><body>'
+        '<h1>#' + channel_name + '</h1>'
+        '<div class="meta">' + str(count) + ' entries | auto-refreshes every 10s | <a href="/channels" style="color:#4CAF50">all channels</a></div>'
+        '<div class="feed">' + rows + '</div>'
+        '<div style="height:80px"></div>'
+        '<div class="input-bar">'
+        '<input type="text" id="msg" placeholder="Type a message..." onkeypress="if(event.key===\'Enter\')sendMsg()">'
+        '<button onclick="sendMsg()">Send</button>'
+        '</div>'
+        '<script>'
+        'function sendMsg(){'
+        '  var msg=document.getElementById("msg").value;'
+        '  if(!msg)return;'
+        '  fetch("/channels/' + name + '/post",{'
+        '    method:"POST",'
+        '    headers:{"Content-Type":"application/json"},'
+        '    body:JSON.stringify({agent_id:"human-pedro",type:"human",data:msg})'
+        '  }).then(function(r){'
+        '    if(r.ok){document.getElementById("msg").value="";location.reload()}'
+        '    else{alert("Failed to send")}'
+        '  });'
+        '}'
+        '</script>'
+        '</body></html>'
+    )
 
     return HTMLResponse(html)
