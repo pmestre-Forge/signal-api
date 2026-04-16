@@ -4,6 +4,7 @@ Agent Infrastructure API — trading signals, memory, and identity for AI agents
 Agents pay per call in USDC on Base L2. No signup, no API keys, no subscriptions.
 """
 
+import json
 import re
 from pathlib import Path
 
