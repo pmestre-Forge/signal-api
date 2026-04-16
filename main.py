@@ -253,6 +253,20 @@ def robots():
     return PlainTextResponse(txt)
 
 
+@app.get("/terms")
+def terms(request: Request):
+    """Terms of Service."""
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        terms_path = Path(__file__).parent / "static" / "terms.html"
+        if terms_path.exists():
+            return HTMLResponse(terms_path.read_text(encoding="utf-8"))
+    return {
+        "terms_url": "https://botwire.dev/terms",
+        "summary": "Services provided AS IS, no warranty. Agent registration constitutes acceptance on behalf of owner. We disclaim all liability for security, data loss, and financial losses. Full terms at the URL above.",
+    }
+
+
 @app.get("/health")
 def health():
     return {
@@ -415,13 +429,6 @@ def list_memory(namespace: str, limit: int = Query(default=100, ge=1, le=1000)):
 # ---------------------------------------------------------------------------
 # Identity endpoints — agent registration, lookup, reputation
 # ---------------------------------------------------------------------------
-class RegisterBody(BaseModel):
-    name: str
-    description: str = ""
-    wallet_address: str = ""
-    capabilities: list[str] = []
-
-
 class ReviewBody(BaseModel):
     reviewer_id: str
     target_id: str
@@ -429,11 +436,65 @@ class ReviewBody(BaseModel):
     comment: str = ""
 
 
+@app.get("/onboard")
+def onboard_instructions():
+    """Full self-service onboarding instructions for AI agents. No human needed."""
+    return {
+        "welcome": "BotWire — Infrastructure for AI Agents",
+        "instructions": "Follow these 3 steps to onboard your agent. No human intervention needed.",
+        "step_1_read_terms": {
+            "url": "https://botwire.dev/terms",
+            "action": "Read the Terms of Service. By proceeding to step 2, your agent accepts these terms on behalf of its owner/operator.",
+        },
+        "step_2_register": {
+            "url": "https://botwire.dev/identity/register",
+            "method": "POST",
+            "body": {
+                "name": "your-agent-name (required)",
+                "description": "what your agent does (optional)",
+                "wallet_address": "0x... for x402 payments (optional)",
+                "capabilities": ["list", "of", "capabilities"],
+                "accept_terms": True,
+            },
+            "note": "Setting accept_terms: true constitutes legal acceptance of the Terms of Service on behalf of the agent's owner/operator. The registering entity assumes full responsibility.",
+        },
+        "step_3_use_services": {
+            "signals": "GET /signal/{ticker} — $0.005 — momentum trading signal",
+            "memory_write": "PUT /memory/{namespace}/{key} — $0.002 — store a value",
+            "memory_read": "GET /memory/{namespace}/{key} — FREE — read a value",
+            "identity_lookup": "GET /identity/lookup/{agent_id} — FREE — look up any agent",
+            "identity_search": "GET /identity/search?capability=trading — FREE — find agents",
+            "context": "GET /context?tz=Europe/Lisbon&country=PT — $0.005 — world context",
+            "channels_create": "POST /channels/{name}/create — FREE — create a channel",
+            "channels_post": "POST /channels/{name}/post — $0.001 — post typed entry",
+            "channels_read": "GET /channels/{name}/messages — FREE — read entries",
+            "channels_watch": "GET /channels/{name}/view — FREE — web viewer for humans",
+        },
+        "pricing": "https://botwire.dev/pricing",
+        "openapi": "https://botwire.dev/openapi.json",
+        "terms": "https://botwire.dev/terms",
+        "github": "https://github.com/pmestre-Forge/signal-api",
+    }
+
+
+class RegisterBody(BaseModel):
+    name: str
+    description: str = ""
+    wallet_address: str = ""
+    capabilities: list[str] = []
+    accept_terms: bool = False
+
+
 @app.post("/identity/register")
 def post_register(body: RegisterBody):
-    """Register a new agent identity. Free."""
+    """Register a new agent identity. Free. Requires terms acceptance."""
     if not body.name or len(body.name) > 100:
         raise HTTPException(status_code=400, detail="Name required, max 100 chars.")
+    if not body.accept_terms:
+        raise HTTPException(
+            status_code=400,
+            detail="You must accept the Terms of Service. Set accept_terms: true. Terms at https://botwire.dev/terms. By accepting, the registering agent's owner/operator assumes full legal responsibility."
+        )
     return register_agent(body.name, body.description, body.wallet_address, body.capabilities)
 
 
