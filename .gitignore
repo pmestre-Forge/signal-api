@@ -9,3 +9,4 @@ build/
 .cache/
 bot.log
 bot/*.log
+forgemaster/pypi_recovery_codes.txt
