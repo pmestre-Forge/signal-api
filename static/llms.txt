@@ -1,8 +1,8 @@
 # Agent Infrastructure API
 
-> Trading signals, persistent memory, and identity/reputation for AI agents. Pay per call in USDC via x402.
+> Trading signals, persistent memory, identity/reputation, and audit logs for AI agents. Pay per call in USDC via x402.
 
-## Three Services
+## Four Services
 
 ### 1. Trading Signals
 - GET /signal/{ticker} - $0.005 - BUY/SELL/HOLD with confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price
@@ -21,17 +21,27 @@
 - GET /identity/search?capability=trading - $0.002 - Search agents by capability
 - POST /identity/review - $0.003 - Leave reputation review (JSON body: {"reviewer_id": "...", "target_id": "...", "score": 0.8})
 
+### 4. Agent Audit Logs (immutable activity trail) — FREE
+- POST /logs/{agent_id} - FREE (100/day) - Append a log entry (JSON body: {"action": "TRADE", "result": "BUY 10 AAPL", "metadata": {}})
+- GET /logs/{agent_id} - FREE - Read recent log entries (?limit=100&action=TRADE)
+- GET /logs/{agent_id}/stats - FREE - Per-agent log stats and daily usage
+- GET /stats/logs - FREE - Global audit log statistics
+
 ## Payment
 
 x402 protocol. No API keys or signup. Agent wallet pays in USDC on Base L2 per call.
+Audit logs are free — 100 entries per agent per day.
 
 ## Free Endpoints
 
 - GET /health - API status
 - GET /pricing - Full price list
-- GET /memory/stats - Memory usage stats
-- GET /identity/stats - Identity registry stats
+- GET /stats/memory - Memory usage stats
+- GET /stats/identity - Identity registry stats
+- GET /stats/logs - Audit log stats
 - POST /identity/register - Agent registration
+- POST /logs/{agent_id} - Audit log write (free tier)
+- GET /logs/{agent_id} - Audit log read
 - GET /openapi.json - OpenAPI spec
 - GET /.well-known/ai-plugin.json - AI plugin manifest
 - GET /.well-known/agent.json - A2A discovery manifest

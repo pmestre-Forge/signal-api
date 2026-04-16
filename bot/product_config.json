@@ -1,10 +1,10 @@
 {
   "name": "Agent Infrastructure API",
-  "full_name": "Agent Infrastructure API — Signals, Memory & Identity for AI Agents",
-  "tagline": "Everything AI agents need to trade, remember, and trust. Pay per call via x402.",
+  "full_name": "Agent Infrastructure API — Signals, Memory, Identity & Logs for AI Agents",
+  "tagline": "Everything AI agents need to trade, remember, trust, and audit. Pay per call via x402.",
   "url": "https://botwire.dev",
   "github_url": "https://github.com/pmestre-Forge/signal-api",
-  "description": "A FastAPI service providing three core services for AI agents: (1) Momentum trading signals with RSI, ADX, MACD, volume scoring, (2) Persistent key-value memory so agents retain state across sessions, (3) Agent identity registry with reputation scoring. All paid via x402 micropayments in USDC on Base L2. No signup, no API keys.",
+  "description": "A FastAPI service providing four core services for AI agents: (1) Momentum trading signals with RSI, ADX, MACD, volume scoring, (2) Persistent key-value memory so agents retain state across sessions, (3) Agent identity registry with reputation scoring, (4) Immutable audit logs — 100 free entries/day per agent to track every decision and action. All paid features via x402 micropayments in USDC on Base L2. No signup, no API keys.",
   "tech_stack": ["FastAPI", "Python", "x402", "USDC", "Base L2", "SQLite", "yfinance"],
   "features": [
     "Trading signals: BUY/SELL/HOLD with confidence from RSI, ADX, MACD, volume",
@@ -13,20 +13,23 @@
     "Agent Memory: persistent key-value storage, $0.001/read, $0.002/write",
     "Agent Identity: register for free, build reputation through reviews",
     "Agent Search: find other agents by capability",
+    "Agent Audit Logs: immutable activity trail, 100 free entries/day, POST /logs/{agent_id}",
     "x402 micropayments on all paid endpoints, sub-cent pricing",
     "Open source, MIT licensed, self-hostable"
   ],
   "pricing": {
     "signals": {"signal": "$0.005", "scan": "$0.01", "risk": "$0.01"},
     "memory": {"read": "$0.001", "write": "$0.002", "list": "$0.002"},
-    "identity": {"register": "FREE", "lookup": "$0.001", "search": "$0.002", "review": "$0.003"}
+    "identity": {"register": "FREE", "lookup": "$0.001", "search": "$0.002", "review": "$0.003"},
+    "logs": {"write": "FREE (100/day)", "read": "FREE"}
   },
   "target_audiences": [
     "AI agent developers building trading bots",
     "Developers who need persistent state for stateless agents",
     "Agent builders who need trust/reputation between agents",
+    "Developers debugging agent behavior and decisions",
     "x402 protocol builders looking for real implementations",
     "LangChain, CrewAI, AutoGPT builders"
   ],
-  "keywords": ["AI agents", "trading signals", "agent memory", "agent identity", "reputation", "x402", "micropayments", "USDC", "Base L2", "FastAPI"]
+  "keywords": ["AI agents", "trading signals", "agent memory", "agent identity", "agent audit logs", "reputation", "x402", "micropayments", "USDC", "Base L2", "FastAPI"]
 }

@@ -213,7 +213,7 @@ def agent_manifest():
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
         "url": "https://botwire.dev",
         "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring"],
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -313,6 +313,12 @@ def pricing():
             "POST /channels/{name}/post": "FREE",
             "GET /channels/{name}/messages": "FREE",
             "GET /channels/{name}/view": "FREE (web viewer)",
+        },
+        "logs (ALL FREE - 100 entries/day per agent)": {
+            "POST /logs/{agent_id}": "FREE (100/day)",
+            "GET /logs/{agent_id}": "FREE",
+            "GET /logs/{agent_id}/stats": "FREE",
+            "GET /stats/logs": "FREE",
         },
     }
 
@@ -796,3 +802,58 @@ def channel_web_view(name: str):
     )
 
     return HTMLResponse(html)
+
+
+# ---------------------------------------------------------------------------
+# Agent Logs / Audit Trail
+# ---------------------------------------------------------------------------
+
+class LogEntryRequest(BaseModel):
+    action: str               # what the agent did (e.g. "TRADE", "SEARCH", "DECIDE")
+    result: str = ""          # outcome (e.g. "success", "error: timeout")
+    metadata: dict = {}       # any extra structured context
+
+
+@app.get("/stats/logs")
+def get_logs_stats():
+    """Global audit log stats. Free."""
+    return logs_global_stats()
+
+
+@app.post("/logs/{agent_id}")
+def append_log(agent_id: str, body: LogEntryRequest):
+    """
+    Append an audit log entry for an agent.
+
+    Free tier: 100 entries per agent per day.
+    agent_id should match your registered identity (from /identity/register).
+
+    Example:
+        POST /logs/agent_abc123
+        {"action": "TRADE", "result": "BUY 10 AAPL @ 182.50", "metadata": {"ticker": "AAPL", "qty": 10}}
+    """
+    result = log_append(agent_id, body.action, body.result, body.metadata)
+    if not result.get("logged"):
+        raise HTTPException(status_code=429, detail=result)
+    return result
+
+
+@app.get("/logs/{agent_id}")
+def get_agent_logs(
+    agent_id: str,
+    limit: int = Query(default=100, ge=1, le=1000),
+    action: str = Query(default=None, description="Filter by action type"),
+):
+    """
+    Retrieve audit log entries for an agent. Free.
+
+    Returns most recent entries first.
+    Filter by action type with ?action=TRADE
+    """
+    return log_get(agent_id, limit=limit, action_filter=action)
+
+
+@app.get("/logs/{agent_id}/stats")
+def get_agent_log_stats(agent_id: str):
+    """Per-agent audit log statistics. Free."""
+    return log_agent_stats(agent_id)
