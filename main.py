@@ -183,7 +183,7 @@ def ai_plugin_manifest():
         },
         "api": {
             "type": "openapi",
-            "url": "https://signal-api-lively-sky-8407.fly.dev/openapi.json",
+            "url": "https://botwire.dev/openapi.json",
         },
         "logo_url": "",
         "contact_email": "p.mestre@live.com.pt",
@@ -207,7 +207,7 @@ def agent_manifest():
     return JSONResponse({
         "name": "Signal API",
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
-        "url": "https://signal-api-lively-sky-8407.fly.dev",
+        "url": "https://botwire.dev",
         "version": "1.0.0",
         "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring"],
         "payment": {
@@ -216,7 +216,7 @@ def agent_manifest():
             "network": "Base L2",
             "min_price": "$0.005",
         },
-        "api_spec": "https://signal-api-lively-sky-8407.fly.dev/openapi.json",
+        "api_spec": "https://botwire.dev/openapi.json",
         "authentication": "none",
         "contact": "p.mestre@live.com.pt",
     })
@@ -228,7 +228,7 @@ def agent_manifest():
 @app.get("/sitemap.xml")
 def sitemap():
     """Sitemap for search engines."""
-    base = "https://signal-api-lively-sky-8407.fly.dev"
+    base = "https://botwire.dev"
     urls = [
         f"{base}/",
         f"{base}/products/signals",
@@ -249,7 +249,7 @@ def sitemap():
 @app.get("/robots.txt")
 def robots():
     """Robots.txt — allow all crawlers."""
-    txt = "User-agent: *\nAllow: /\nSitemap: https://signal-api-lively-sky-8407.fly.dev/sitemap.xml\n"
+    txt = "User-agent: *\nAllow: /\nSitemap: https://botwire.dev/sitemap.xml\n"
     return PlainTextResponse(txt)
 
 
@@ -583,9 +583,9 @@ def _product_html(product: dict) -> str:
 <meta name="description" content="{product['description']}">
 <meta name="keywords" content="{product['keywords']}">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://signal-api-lively-sky-8407.fly.dev/">
+<link rel="canonical" href="https://botwire.dev/">
 <script type="application/ld+json">
-{{"@context":"https://schema.org","@type":"WebAPI","name":"{product['h1']}","description":"{product['description']}","url":"https://signal-api-lively-sky-8407.fly.dev","provider":{{"@type":"Organization","name":"Agent Infrastructure API","url":"https://github.com/pmestre-Forge/signal-api"}}}}
+{{"@context":"https://schema.org","@type":"WebAPI","name":"{product['h1']}","description":"{product['description']}","url":"https://botwire.dev","provider":{{"@type":"Organization","name":"Agent Infrastructure API","url":"https://github.com/pmestre-Forge/signal-api"}}}}
 </script>
 <style>*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:-apple-system,sans-serif;background:#0a0a0a;color:#e0e0e0;line-height:1.6}}.c{{max-width:800px;margin:0 auto;padding:40px 20px}}h1{{font-size:2.2em;color:#fff;margin-bottom:10px}}.desc{{color:#888;margin-bottom:30px;font-size:1.1em}}.endpoint{{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:15px;margin:8px 0}}code{{color:#4CAF50}}a{{color:#4CAF50}}.btn{{display:inline-block;background:#4CAF50;color:#000;padding:10px 25px;border-radius:8px;font-weight:bold;margin:5px;text-decoration:none}}</style>
 </head>

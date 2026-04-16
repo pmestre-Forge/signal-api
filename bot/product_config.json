@@ -2,7 +2,7 @@
   "name": "Agent Infrastructure API",
   "full_name": "Agent Infrastructure API — Signals, Memory & Identity for AI Agents",
   "tagline": "Everything AI agents need to trade, remember, and trust. Pay per call via x402.",
-  "url": "https://signal-api-lively-sky-8407.fly.dev",
+  "url": "https://botwire.dev",
   "github_url": "https://github.com/pmestre-Forge/signal-api",
   "description": "A FastAPI service providing three core services for AI agents: (1) Momentum trading signals with RSI, ADX, MACD, volume scoring, (2) Persistent key-value memory so agents retain state across sessions, (3) Agent identity registry with reputation scoring. All paid via x402 micropayments in USDC on Base L2. No signup, no API keys.",
   "tech_stack": ["FastAPI", "Python", "x402", "USDC", "Base L2", "SQLite", "yfinance"],

@@ -13,7 +13,7 @@ from pathlib import Path
 import httpx
 
 INTEL_FILE = Path(__file__).parent / "intelligence.md"
-API_URL = "https://signal-api-lively-sky-8407.fly.dev"
+API_URL = "https://botwire.dev"
 FORGE_ROOT = Path.home() / "OneDrive" / "Ambiente de Trabalho" / "Forge" / "forge-distro"
 
 

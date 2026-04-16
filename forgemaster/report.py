@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REPORT_DIR = Path(__file__).parent
-API_URL = "https://signal-api-lively-sky-8407.fly.dev"
+API_URL = "https://botwire.dev"
 GITHUB_URL = "https://github.com/pmestre-Forge/signal-api"
 
 

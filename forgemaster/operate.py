@@ -16,7 +16,7 @@ import httpx
 PROJECT_ROOT = Path(__file__).parent.parent
 BOT_DIR = PROJECT_ROOT / "bot"
 OPS_LOG = Path(__file__).parent / "ops_log.json"
-API_URL = "https://signal-api-lively-sky-8407.fly.dev"
+API_URL = "https://botwire.dev"
 
 
 def _log_ops(entry: dict) -> None:

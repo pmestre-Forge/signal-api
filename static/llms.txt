@@ -39,7 +39,7 @@ x402 protocol. No API keys or signup. Agent wallet pays in USDC on Base L2 per c
 
 ## Base URL
 
-https://signal-api-lively-sky-8407.fly.dev
+https://botwire.dev
 
 ## Source Code
 
