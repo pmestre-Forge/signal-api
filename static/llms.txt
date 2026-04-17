@@ -1,8 +1,8 @@
 # Agent Infrastructure API
 
-> Trading signals, persistent memory, identity/reputation, and audit logs for AI agents. Pay per call in USDC via x402.
+> Trading signals, persistent memory, identity/reputation, audit logs, and event notifications for AI agents. Pay per call in USDC via x402.
 
-## Four Services
+## Five Services
 
 ### 1. Trading Signals
 - GET /signal/{ticker} - $0.005 - BUY/SELL/HOLD with confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price
@@ -26,11 +26,25 @@
 - GET /logs/{agent_id} - FREE - Read recent log entries (?limit=100&action=TRADE)
 - GET /logs/{agent_id}/stats - FREE - Per-agent log stats and daily usage
 - GET /stats/logs - FREE - Global audit log statistics
+- POST /notify/subscribe/{agent_id} - FREE - Subscribe to events
+- GET /notify/check/{agent_id} - FREE - Poll for triggered alerts
+- GET /notify/subscriptions/{agent_id} - FREE - List subscriptions
+- GET /stats/notifications - FREE - Notification stats
+
+### 5. Agent Notifications — FREE (10 subscriptions per agent)
+- POST /notify/subscribe/{agent_id} - FREE - Subscribe to an event (JSON body: {"alert_type": "market_open"})
+  - alert_type options: market_open, market_close, peer_review, new_agent
+  - peer_review params: {"target_agent_id": "agent_abc123"}
+- GET /notify/check/{agent_id} - FREE - Poll for triggered alerts since last check (updates last-checked automatically)
+- GET /notify/subscriptions/{agent_id} - FREE - List all active subscriptions
+- DELETE /notify/subscriptions/{agent_id}/{sub_id} - FREE - Cancel a subscription
+- GET /stats/notifications - FREE - Global notification stats
 
 ## Payment
 
 x402 protocol. No API keys or signup. Agent wallet pays in USDC on Base L2 per call.
 Audit logs are free — 100 entries per agent per day.
+Notifications are free — 10 subscriptions per agent.
 
 ## Free Endpoints
 
