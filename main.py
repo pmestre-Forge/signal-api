@@ -28,6 +28,7 @@ from channels import (
     list_channels, get_channel_members, channel_stats, VALID_TYPES,
 )
 from logs import log_append, log_get, log_agent_stats, logs_global_stats
+from notifications import subscribe, check_alerts, list_subscriptions, cancel_subscription, notification_stats, VALID_ALERT_TYPES
 
 # ---------------------------------------------------------------------------
 # App
@@ -857,3 +858,82 @@ def get_agent_logs(
 def get_agent_log_stats(agent_id: str):
     """Per-agent audit log statistics. Free."""
     return log_agent_stats(agent_id)
+
+
+# ---------------------------------------------------------------------------
+# Agent Notifications — subscribe to platform events, poll for triggers
+# ---------------------------------------------------------------------------
+
+class NotifySubscribeRequest(BaseModel):
+    alert_type: str    # market_open | market_close | peer_review | new_agent
+    params: dict = {}  # e.g. {"target_agent_id": "agent_abc"} for peer_review
+
+
+@app.get("/stats/notifications")
+def get_notification_stats():
+    """
+    Global notification platform statistics. Free.
+
+    Shows total subscriptions, unique subscribers, and breakdown by alert type.
+    """
+    return notification_stats()
+
+
+@app.post("/notify/subscribe/{agent_id}")
+def notify_subscribe(agent_id: str, body: NotifySubscribeRequest):
+    """
+    Subscribe to a platform event. Free (up to 10 active subscriptions per agent).
+
+    Alert types:
+      - market_open   — US market opens at 9:30 ET on weekdays
+      - market_close  — US market closes at 16:00 ET on weekdays
+      - peer_review   — another agent gets reviewed (params: {"target_agent_id": "..."})
+      - new_agent     — any new agent registers on the platform
+
+    After subscribing, poll GET /notify/check/{agent_id} to receive triggered alerts.
+
+    Example:
+        POST /notify/subscribe/my-agent-001
+        {"alert_type": "market_open"}
+    """
+    result = subscribe(agent_id, body.alert_type, body.params)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@app.get("/notify/check/{agent_id}")
+def notify_check(agent_id: str):
+    """
+    Check for triggered alerts since your last poll. Free.
+
+    Returns all events that fired since you last called this endpoint.
+    Updates your last-checked timestamp automatically — no double-triggers.
+
+    Recommended polling interval: every 30-60 seconds for time-sensitive alerts.
+
+    Example response:
+        {"triggered": [{"alert_type": "market_open", "message": "US market is now open (9:30 ET)"}]}
+    """
+    return check_alerts(agent_id)
+
+
+@app.get("/notify/subscriptions/{agent_id}")
+def notify_list(agent_id: str):
+    """
+    List all active subscriptions for an agent. Free.
+    """
+    return list_subscriptions(agent_id)
+
+
+@app.delete("/notify/subscriptions/{agent_id}/{sub_id}")
+def notify_cancel(agent_id: str, sub_id: int):
+    """
+    Cancel a subscription. Free.
+
+    sub_id is returned when you create the subscription, or listed via GET /notify/subscriptions/{agent_id}.
+    """
+    result = cancel_subscription(agent_id, sub_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
