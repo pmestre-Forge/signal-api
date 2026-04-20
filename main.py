@@ -29,6 +29,7 @@ from channels import (
 )
 from logs import log_append, log_get, log_agent_stats, logs_global_stats
 from notifications import subscribe, check_alerts, list_subscriptions, cancel_subscription, notification_stats, VALID_ALERT_TYPES
+from config_store import config_set, config_get, config_delete, config_list, config_export, config_import, config_stats, VALID_TYPES as CONFIG_TYPES
 
 # ---------------------------------------------------------------------------
 # App
@@ -169,6 +170,13 @@ def root(request: Request):
                 "POST /channels/{name}/post": "FREE - Post entry",
                 "GET /channels/{name}/messages": "FREE - Read entries",
             },
+            "config (ALL FREE)": {
+                "PUT /config/{agent_id}/{key}": "FREE - Store config",
+                "GET /config/{agent_id}/{key}": "FREE - Read config",
+                "GET /config/{agent_id}": "FREE - List config",
+                "GET /config/{agent_id}/export": "FREE - Export bundle",
+                "POST /config/{agent_id}/import": "FREE - Import bundle",
+            },
         },
     }
 
@@ -181,7 +189,7 @@ def ai_plugin_manifest():
         "name_for_human": "Signal API - Trading Signals",
         "name_for_model": "signal_api",
         "description_for_human": "Get momentum trading signals (RSI, ADX, MACD, volume) for US stocks. Pay per call in USDC.",
-        "description_for_model": "Agent infrastructure API with 5 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. (4) Agent Audit Logs - POST /logs/{agent_id} free 100/day, GET /logs/{agent_id} to read. (5) Agent Notifications - POST /notify/subscribe/{agent_id} to subscribe to market_open/market_close/peer_review/new_agent events, GET /notify/check/{agent_id} to poll for triggered alerts. Payment via x402 (USDC on Base L2).",
+        "description_for_model": "Agent infrastructure API with 6 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. (4) Agent Audit Logs - POST /logs/{agent_id} free 100/day, GET /logs/{agent_id} to read. (5) Agent Notifications - POST /notify/subscribe/{agent_id} for market_open/market_close/peer_review/new_agent events. (6) Agent Config Store - PUT/GET/DELETE /config/{agent_id}/{key} for typed operational config (schedules, rules, preferences, flags, state). GET /config/{agent_id}/export and POST /config/{agent_id}/import for portable config bundles. All free, 50 entries per agent. Payment via x402 (USDC on Base L2).",
         "auth": {
             "type": "none",
             "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
@@ -214,7 +222,7 @@ def agent_manifest():
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
         "url": "https://botwire.dev",
         "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions"],
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -320,6 +328,14 @@ def pricing():
             "GET /logs/{agent_id}": "FREE",
             "GET /logs/{agent_id}/stats": "FREE",
             "GET /stats/logs": "FREE",
+        },
+        "config (ALL FREE - 50 entries per agent)": {
+            "PUT /config/{agent_id}/{key}": "FREE - Store config entry",
+            "GET /config/{agent_id}/{key}": "FREE - Read config entry",
+            "DELETE /config/{agent_id}/{key}": "FREE - Delete config entry",
+            "GET /config/{agent_id}": "FREE - List all config",
+            "GET /config/{agent_id}/export": "FREE - Export config bundle",
+            "POST /config/{agent_id}/import": "FREE - Import config bundle",
         },
     }
 
@@ -936,4 +952,107 @@ def notify_cancel(agent_id: str, sub_id: int):
     result = cancel_subscription(agent_id, sub_id)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Agent Config Store — structured operational config for AI agents
+# ---------------------------------------------------------------------------
+
+class ConfigSetRequest(BaseModel):
+    value: str
+    config_type: str = "preference"  # schedule | rule | preference | flag | state
+    description: str = ""
+
+
+class ConfigImportRequest(BaseModel):
+    config: dict
+    overwrite: bool = False
+
+
+@app.get("/stats/config")
+def get_config_stats():
+    """
+    Global config store statistics. Free.
+
+    Shows total entries, total agents using config store, and breakdown by type.
+    """
+    return config_stats()
+
+
+@app.put("/config/{agent_id}/{key}")
+def set_config(agent_id: str, key: str, body: ConfigSetRequest):
+    """
+    Store or update a config entry. Free (50 entries per agent).
+
+    Config types: schedule, rule, preference, flag, state
+
+    Examples:
+        PUT /config/my-agent/trade_schedule
+        {"value": "0 9 * * 1-5", "config_type": "schedule", "description": "Trade at 9am weekdays"}
+
+        PUT /config/my-agent/max_drawdown
+        {"value": "0.05", "config_type": "rule", "description": "Stop trading at 5% drawdown"}
+
+        PUT /config/my-agent/timezone
+        {"value": "America/New_York", "config_type": "preference"}
+    """
+    result = config_set(agent_id, key, body.value, body.config_type, body.description)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@app.get("/config/{agent_id}/export")
+def export_config(agent_id: str):
+    """
+    Export all config entries as a portable JSON bundle. Free.
+
+    Use this to backup config or migrate it to another agent instance.
+    The bundle format is compatible with POST /config/{agent_id}/import.
+    """
+    return config_export(agent_id)
+
+
+@app.get("/config/{agent_id}/{key}")
+def get_config(agent_id: str, key: str):
+    """
+    Read a single config entry. Free.
+    """
+    result = config_get(agent_id, key)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"Config key '{key}' not found for agent '{agent_id}'")
+    return result
+
+
+@app.delete("/config/{agent_id}/{key}")
+def delete_config(agent_id: str, key: str):
+    """
+    Delete a config entry. Free.
+    """
+    deleted = config_delete(agent_id, key)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Config key '{key}' not found for agent '{agent_id}'")
+    return {"agent_id": agent_id, "key": key, "deleted": True}
+
+
+@app.get("/config/{agent_id}")
+def list_config(agent_id: str, config_type: str = Query(default="", description="Filter by type: schedule, rule, preference, flag, state")):
+    """
+    List all config entries for an agent. Free.
+
+    Optionally filter by type: ?config_type=schedule
+    """
+    return config_list(agent_id, config_type or None)
+
+
+@app.post("/config/{agent_id}/import")
+def import_config(agent_id: str, body: ConfigImportRequest):
+    """
+    Import a config bundle. Free.
+
+    Expects format from GET /config/{agent_id}/export.
+    By default skips existing keys. Set overwrite=true to replace them.
+    """
+    result = config_import(agent_id, body.config, body.overwrite)
     return result
