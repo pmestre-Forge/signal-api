@@ -1,10 +1,10 @@
 {
   "name": "Agent Infrastructure API",
-  "full_name": "Agent Infrastructure API — Signals, Memory, Identity & Logs for AI Agents",
-  "tagline": "Everything AI agents need to trade, remember, trust, and audit. Pay per call via x402.",
+  "full_name": "Agent Infrastructure API — Signals, Memory, Identity, Logs & Config for AI Agents",
+  "tagline": "Everything AI agents need to trade, remember, trust, audit, and configure. Pay per call via x402.",
   "url": "https://botwire.dev",
   "github_url": "https://github.com/pmestre-Forge/signal-api",
-  "description": "A FastAPI service providing five core services for AI agents: (1) Momentum trading signals with RSI, ADX, MACD, volume scoring, (2) Persistent key-value memory so agents retain state across sessions, (3) Agent identity registry with reputation scoring, (4) Immutable audit logs — 100 free entries/day per agent to track every decision and action, (5) Agent Notifications — subscribe to market open/close, peer reviews, and new agent registrations. Free tier on all adoption products. All paid features via x402 micropayments in USDC on Base L2. No signup, no API keys.",
+  "description": "A FastAPI service providing six core services for AI agents: (1) Momentum trading signals with RSI, ADX, MACD, volume scoring, (2) Persistent key-value memory so agents retain state across sessions, (3) Agent identity registry with reputation scoring, (4) Immutable audit logs — 100 free entries/day per agent to track every decision and action, (5) Agent Notifications — subscribe to market open/close, peer reviews, and new agent registrations, (6) Agent Config Store — store typed operational config (schedules, rules, preferences, flags) with export/import bundles. Free tier on all adoption products. All paid features via x402 micropayments in USDC on Base L2. No signup, no API keys.",
   "tech_stack": ["FastAPI", "Python", "x402", "USDC", "Base L2", "SQLite", "yfinance"],
   "features": [
     "Trading signals: BUY/SELL/HOLD with confidence from RSI, ADX, MACD, volume",
@@ -15,6 +15,7 @@
     "Agent Search: find other agents by capability",
     "Agent Audit Logs: immutable activity trail, 100 free entries/day, POST /logs/{agent_id}",
     "Agent Notifications: subscribe to market_open/close, peer reviews, new agents — poll GET /notify/check/{agent_id}",
+    "Agent Config Store: PUT/GET/DELETE /config/{agent_id}/{key}, types: schedule/rule/preference/flag/state, export+import bundles",
     "x402 micropayments on all paid endpoints, sub-cent pricing",
     "Open source, MIT licensed, self-hostable"
   ],
@@ -23,7 +24,8 @@
     "memory": {"read": "$0.001", "write": "$0.002", "list": "$0.002"},
     "identity": {"register": "FREE", "lookup": "$0.001", "search": "$0.002", "review": "$0.003"},
     "logs": {"write": "FREE (100/day)", "read": "FREE"},
-    "notifications": {"subscribe": "FREE (10/agent)", "check": "FREE", "list": "FREE"}
+    "notifications": {"subscribe": "FREE (10/agent)", "check": "FREE", "list": "FREE"},
+    "config": {"store": "FREE (50 entries/agent)", "read": "FREE", "export": "FREE", "import": "FREE"}
   },
   "target_audiences": [
     "AI agent developers building trading bots",
@@ -33,5 +35,5 @@
     "x402 protocol builders looking for real implementations",
     "LangChain, CrewAI, AutoGPT builders"
   ],
-  "keywords": ["AI agents", "trading signals", "agent memory", "agent identity", "agent audit logs", "agent notifications", "event subscriptions", "reputation", "x402", "micropayments", "USDC", "Base L2", "FastAPI"]
+  "keywords": ["AI agents", "trading signals", "agent memory", "agent identity", "agent audit logs", "agent notifications", "agent config store", "event subscriptions", "reputation", "x402", "micropayments", "USDC", "Base L2", "FastAPI"]
 }

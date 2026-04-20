@@ -1,8 +1,8 @@
 # Agent Infrastructure API
 
-> Trading signals, persistent memory, identity/reputation, audit logs, and event notifications for AI agents. Pay per call in USDC via x402.
+> Trading signals, persistent memory, identity/reputation, audit logs, event notifications, and operational config for AI agents. Pay per call in USDC via x402.
 
-## Five Services
+## Six Services
 
 ### 1. Trading Signals
 - GET /signal/{ticker} - $0.005 - BUY/SELL/HOLD with confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price
@@ -40,11 +40,23 @@
 - DELETE /notify/subscriptions/{agent_id}/{sub_id} - FREE - Cancel a subscription
 - GET /stats/notifications - FREE - Global notification stats
 
+### 6. Agent Config Store — FREE (50 entries per agent)
+- PUT /config/{agent_id}/{key} - FREE - Store or update a config entry (JSON body: {"value": "...", "config_type": "preference", "description": "..."})
+  - config_type options: schedule, rule, preference, flag, state
+  - Example: store a cron schedule, a trading rule, a timezone preference, a feature flag, or runtime state
+- GET /config/{agent_id}/{key} - FREE - Read a single config entry
+- DELETE /config/{agent_id}/{key} - FREE - Delete a config entry
+- GET /config/{agent_id} - FREE - List all config entries (?config_type=schedule to filter by type)
+- GET /config/{agent_id}/export - FREE - Export all config as a portable JSON bundle
+- POST /config/{agent_id}/import - FREE - Import a config bundle (JSON body: {"config": {...}, "overwrite": false})
+- GET /stats/config - FREE - Global config store statistics
+
 ## Payment
 
 x402 protocol. No API keys or signup. Agent wallet pays in USDC on Base L2 per call.
 Audit logs are free — 100 entries per agent per day.
 Notifications are free — 10 subscriptions per agent.
+Config Store is free — 50 entries per agent.
 
 ## Free Endpoints
 
@@ -53,9 +65,13 @@ Notifications are free — 10 subscriptions per agent.
 - GET /stats/memory - Memory usage stats
 - GET /stats/identity - Identity registry stats
 - GET /stats/logs - Audit log stats
+- GET /stats/config - Config store stats
 - POST /identity/register - Agent registration
 - POST /logs/{agent_id} - Audit log write (free tier)
 - GET /logs/{agent_id} - Audit log read
+- GET /config/{agent_id} - Config list (free)
+- PUT /config/{agent_id}/{key} - Config store (free)
+- GET /config/{agent_id}/export - Config export (free)
 - GET /openapi.json - OpenAPI spec
 - GET /.well-known/ai-plugin.json - AI plugin manifest
 - GET /.well-known/agent.json - A2A discovery manifest
