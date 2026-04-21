@@ -83,7 +83,7 @@ def build_report(ops_report: dict, intel_entry: str) -> dict:
     # Things that need Pedro
     needs_pedro = []
     if pat.get("urgent"):
-        needs_pedro.append("Renew GitHub PAT (expires in {pat['days_left']} days)")
+        needs_pedro.append(f"Renew GitHub PAT (expires in {pat['days_left']} days)")
     if not bot.get("alive") and not any("restart" in a.lower() for a in actions):
         needs_pedro.append("Bot is down and couldn't auto-restart")
 

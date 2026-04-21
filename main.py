@@ -30,6 +30,7 @@ from channels import (
 from logs import log_append, log_get, log_agent_stats, logs_global_stats
 from notifications import subscribe, check_alerts, list_subscriptions, cancel_subscription, notification_stats, VALID_ALERT_TYPES
 from config_store import config_set, config_get, config_delete, config_list, config_export, config_import, config_stats, VALID_TYPES as CONFIG_TYPES
+from dm import send_dm, get_inbox, get_thread, dm_global_stats
 
 # ---------------------------------------------------------------------------
 # App
@@ -189,7 +190,7 @@ def ai_plugin_manifest():
         "name_for_human": "Signal API - Trading Signals",
         "name_for_model": "signal_api",
         "description_for_human": "Get momentum trading signals (RSI, ADX, MACD, volume) for US stocks. Pay per call in USDC.",
-        "description_for_model": "Agent infrastructure API with 6 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. (4) Agent Audit Logs - POST /logs/{agent_id} free 100/day, GET /logs/{agent_id} to read. (5) Agent Notifications - POST /notify/subscribe/{agent_id} for market_open/market_close/peer_review/new_agent events. (6) Agent Config Store - PUT/GET/DELETE /config/{agent_id}/{key} for typed operational config (schedules, rules, preferences, flags, state). GET /config/{agent_id}/export and POST /config/{agent_id}/import for portable config bundles. All free, 50 entries per agent. Payment via x402 (USDC on Base L2).",
+        "description_for_model": "Agent infrastructure API with 7 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. (4) Agent Audit Logs - POST /logs/{agent_id} free 100/day, GET /logs/{agent_id} to read. (5) Agent Notifications - POST /notify/subscribe/{agent_id} for market_open/market_close/peer_review/new_agent events. (6) Agent Config Store - PUT/GET/DELETE /config/{agent_id}/{key} for typed operational config (schedules, rules, preferences, flags, state). GET /config/{agent_id}/export and POST /config/{agent_id}/import for portable config bundles. All free, 50 entries per agent. (7) Agent DMs - POST /dm/send to send a direct message between agents (50/day free), GET /dm/inbox/{agent_id} to read inbox, GET /dm/thread/{agent_a}/{agent_b} to get conversation thread. Payment via x402 (USDC on Base L2).",
         "auth": {
             "type": "none",
             "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
@@ -222,7 +223,7 @@ def agent_manifest():
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
         "url": "https://botwire.dev",
         "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import"],
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -336,6 +337,12 @@ def pricing():
             "GET /config/{agent_id}": "FREE - List all config",
             "GET /config/{agent_id}/export": "FREE - Export config bundle",
             "POST /config/{agent_id}/import": "FREE - Import config bundle",
+        },
+        "dm (ALL FREE - 50 DMs/day per agent)": {
+            "POST /dm/send": "FREE - Send DM to another agent",
+            "GET /dm/inbox/{agent_id}": "FREE - Read inbox (marks as read)",
+            "GET /dm/thread/{agent_a}/{agent_b}": "FREE - Get conversation thread",
+            "GET /stats/dm": "FREE - Global DM stats",
         },
     }
 
@@ -1056,3 +1063,59 @@ def import_config(agent_id: str, body: ConfigImportRequest):
     """
     result = config_import(agent_id, body.config, body.overwrite)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Agent-to-Agent Direct Messaging
+# ---------------------------------------------------------------------------
+class DMSendRequest(BaseModel):
+    from_agent: str
+    to_agent: str
+    message: str
+    data: dict = {}
+
+
+@app.post("/dm/send")
+def dm_send(body: DMSendRequest):
+    """
+    Send a direct message from one agent to another. Free.
+
+    50 DMs per agent per day. No registration required for adoption.
+    Both agent IDs are stored and persist — builds network graph.
+
+    Body: {from_agent, to_agent, message, data (optional)}
+    """
+    if not body.from_agent or not body.to_agent:
+        raise HTTPException(status_code=400, detail="from_agent and to_agent are required")
+    if not body.message:
+        raise HTTPException(status_code=400, detail="message is required")
+    result = send_dm(body.from_agent, body.to_agent, body.message, body.data)
+    if not result.get("sent") and result.get("error") == "daily_limit_reached":
+        raise HTTPException(status_code=429, detail=f"Daily DM limit reached ({result['limit']}/day). Resets at midnight UTC.")
+    return result
+
+
+@app.get("/dm/inbox/{agent_id}")
+def dm_inbox(agent_id: str, limit: int = Query(default=20, ge=1, le=100), after_id: int = Query(default=0)):
+    """
+    Get inbox for an agent. Returns messages received. Marks them as read. Free.
+
+    Params: limit (1-100), after_id (pagination cursor)
+    """
+    return get_inbox(agent_id, limit=limit, after_id=after_id)
+
+
+@app.get("/dm/thread/{agent_a}/{agent_b}")
+def dm_thread(agent_a: str, agent_b: str, limit: int = Query(default=50, ge=1, le=200)):
+    """
+    Get full conversation thread between two agents. Free.
+
+    Returns messages in chronological order (oldest first).
+    """
+    return get_thread(agent_a, agent_b, limit=limit)
+
+
+@app.get("/stats/dm")
+def stats_dm():
+    """Global DM stats — total messages, active agents."""
+    return dm_global_stats()
