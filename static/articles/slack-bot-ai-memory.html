@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slack Bot With AI Memory (Per User, Per Channel) | BotWire</title>
+<meta name="description" content="Slack bot dev whose AI answers forget channel context every deploy. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="slack bot memory, slack ai agent, slack bolt memory, slack chatbot state">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/slack-bot-ai-memory">
+<meta property="og:title" content="Slack Bot With AI Memory (Per User, Per Channel)">
+<meta property="og:description" content="Slack bot dev whose AI answers forget channel context every deploy. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/slack-bot-ai-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Slack Bot With AI Memory (Per User, Per Channel)">
+<meta name="twitter:description" content="Slack bot dev whose AI answers forget channel context every deploy. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Slack Bot With AI Memory (Per User, Per Channel)", "description": "Slack bot dev whose AI answers forget channel context every deploy. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/slack-bot-ai-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/slack-bot-ai-memory"}, "keywords": "slack bot memory, slack ai agent, slack bolt memory, slack chatbot state", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Slack Bot With AI Memory (Per User, Per Channel)</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your Slack bot's AI forgets everything after each deploy. User context vanishes. Channel conversations restart from zero. You've built something smart, but it has amnesia. Here's how to give your <strong>Slack AI bot persistent memory</strong> that survives restarts, deployments, and crashes.</p>
+<h2>The Problem: AI Bots Without Memory</h2>
+<p>Every time you deploy your <strong>Slack bot</strong>, it loses all context. The AI doesn't remember previous conversations, user preferences, or channel-specific settings. Your bot starts every interaction as if it's meeting users for the first time.</p>
+<p>This happens because most Slack bots store state in memory (variables, objects) that disappears when the process restarts. Even if you're using sophisticated AI frameworks, they typically don't persist conversation history or user context between sessions.</p>
+<p>The result? Users get frustrated repeating themselves. Your AI agent can't build on previous conversations. Channel-specific configurations reset. Multi-turn conversations break. You end up with a bot that feels disconnected and unhelpful.</p>
+<p>Traditional solutions like databases require setup, schema design, and maintenance. Session caches expire. File storage doesn't scale across multiple bot instances.</p>
+<h2>The Fix: BotWire Memory</h2>
+<p>Install BotWire and add persistent memory in three lines:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Create persistent memory for your Slack bot
+memory = Memory("slack-bot-v1")
+
+# Store user context
+memory.set("user-12345-preferences", {"timezone": "PST", "notifications": True})
+
+# Store channel state  
+memory.set("channel-general-context", {"last_topic": "deployment issues", "active_users": 15})
+
+# Retrieve across restarts
+user_prefs = memory.get("user-12345-preferences")
+channel_context = memory.get("channel-general-context")</code></pre>
+<p>Your <strong>Slack chatbot state</strong> now persists forever. No database setup, no API keys, no configuration.</p>
+<h2>How It Works</h2>
+<p>BotWire provides a simple key-value store that survives process restarts. Your memory calls hit a persistent backend at <code>https://botwire.dev</code> — no signup required.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+class SlackBot:
+    def __init__(self):
+        self.memory = Memory("mybot-prod")  # namespace isolates your data
+    
+    def handle_message(self, user_id, channel_id, message):
+        # Get conversation history
+        history_key = f"conversation-{channel_id}"
+        history = self.memory.get(history_key) or []
+        
+        # Add current message
+        history.append({"user": user_id, "text": message, "timestamp": time.time()})
+        
+        # Store updated history
+        self.memory.set(history_key, history[-50:])  # keep last 50 messages
+        
+        # Get user profile
+        user_profile = self.memory.get(f"user-{user_id}") or {"interactions": 0}
+        user_profile["interactions"] += 1
+        self.memory.set(f"user-{user_id}", user_profile)</code></pre>
+<p><strong>Cross-process memory:</strong> If you run multiple bot instances, they all share the same memory namespace. User data stays consistent across all instances.</p>
+<p><strong>No TTL by default:</strong> Data persists until you delete it. For temporary data, clear it manually:</p>
+<pre><code class="lang-python"># Clean up old conversations
+memory.delete(f"temp-session-{session_id}")
+
+# List all keys (for debugging)
+all_keys = memory.list_keys()
+print(f"Stored {len(all_keys)} items")</code></pre>
+<p>This <strong>Slack bot memory</strong> pattern works for user preferences, conversation context, feature flags, or any state your AI agent needs to remember.</p>
+<h2>Slack Bolt Integration</h2>
+<p>If you're using Slack's Bolt framework, integrate BotWire memory directly into your event handlers:</p>
+<pre><code class="lang-python">from slack_bolt import App
+from botwire import Memory
+
+app = App(token="xoxb-your-token")
+memory = Memory("slack-bolt-bot")
+
+@app.message("help")
+def handle_help(message, say):
+    user_id = message["user"]
+    channel_id = message["channel"]
+    
+    # Track help requests per user
+    help_count_key = f"help-count-{user_id}"
+    count = memory.get(help_count_key) or 0
+    memory.set(help_count_key, count + 1)
+    
+    # Get channel-specific help context
+    channel_context = memory.get(f"channel-{channel_id}-help") or {}
+    
+    if count &gt; 3:
+        say(f"You've asked for help {count} times. Let me connect you with a human.")
+    else:
+        say("Here's what I can help with...")
+    
+    # Update channel help stats
+    channel_context["last_help_request"] = time.time()
+    memory.set(f"channel-{channel_id}-help", channel_context)</code></pre>
+<p>Your <strong>Slack AI agent</strong> now remembers every user interaction and channel context, even after restarts.</p>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search</strong>: BotWire isn't a vector database. For semantic similarity or embeddings, use Pinecone or Weaviate.</li>
+<li><strong>High-throughput apps</strong>: Free tier caps at 1000 writes/day per namespace. Heavy bots need the paid tier or self-hosting.</li>
+<li><strong>Sub-millisecond latency</strong>: Network calls add ~50-200ms. For ultra-fast lookups, use in-memory caching alongside BotWire.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not Redis?</strong> Redis requires setup, hosting, and maintenance. BotWire works immediately with zero configuration. For production scale, self-host BotWire or use managed Redis.</p>
+<p><strong>Is this actually free?</strong> Yes, forever. 1000 writes/day, 50MB storage per namespace, unlimited reads. No credit card, no trial period.</p>
+<p><strong>What about data privacy?</strong> Self-host the open-source version (MIT license) for full control. The hosted version doesn't require signup, so no personal data collection.</p>
+<h2>Get Started</h2>
+<p>Stop losing bot context on every deploy. Install BotWire and give your Slack AI persistent memory in minutes.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full docs and self-hosting guide: https://botwire.dev</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

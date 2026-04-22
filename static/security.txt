@@ -1,0 +1,8 @@
+Contact: mailto:p.mestre@live.com.pt
+Expires: 2027-04-22T00:00:00.000Z
+Preferred-Languages: en, pt
+Canonical: https://botwire.dev/.well-known/security.txt
+Policy: https://github.com/pmestre-Forge/signal-api/blob/main/SECURITY.md
+
+# Thanks for reporting responsibly. This is a solo-maintained open-source project.
+# Coordinated disclosure welcome; public disclosure after a fix is merged.

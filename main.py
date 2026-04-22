@@ -307,6 +307,25 @@ def indexnow_key():
     return PlainTextResponse(INDEXNOW_KEY)
 
 
+@app.get("/.well-known/security.txt", include_in_schema=False)
+@app.get("/security.txt", include_in_schema=False)
+def security_txt():
+    """security.txt per RFC 9116."""
+    p = Path(__file__).parent / "static" / "security.txt"
+    if p.exists():
+        return PlainTextResponse(p.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404)
+
+
+@app.get("/humans.txt", include_in_schema=False)
+def humans_txt():
+    """humans.txt — credits and context."""
+    p = Path(__file__).parent / "static" / "humans.txt"
+    if p.exists():
+        return PlainTextResponse(p.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404)
+
+
 @app.get("/robots.txt", include_in_schema=False)
 def robots():
     """Allow all crawlers — including LLM research bots (GPTBot, ClaudeBot, PerplexityBot)."""

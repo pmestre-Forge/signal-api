@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp AI Assistant With Persistent Memory | BotWire</title>
+<meta name="description" content="Dev building a WhatsApp AI via Twilio/Meta whose chat history vanishes on restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta name="keywords" content="whatsapp ai memory, whatsapp bot persistent, whatsapp chatbot state, twilio whatsapp ai">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/whatsapp-ai-memory">
+<meta property="og:title" content="WhatsApp AI Assistant With Persistent Memory">
+<meta property="og:description" content="Dev building a WhatsApp AI via Twilio/Meta whose chat history vanishes on restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta property="og:url" content="https://botwire.dev/articles/whatsapp-ai-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WhatsApp AI Assistant With Persistent Memory">
+<meta name="twitter:description" content="Dev building a WhatsApp AI via Twilio/Meta whose chat history vanishes on restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "WhatsApp AI Assistant With Persistent Memory", "description": "Dev building a WhatsApp AI via Twilio/Meta whose chat history vanishes on restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG", "url": "https://botwire.dev/articles/whatsapp-ai-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/whatsapp-ai-memory"}, "keywords": "whatsapp ai memory, whatsapp bot persistent, whatsapp chatbot state, twilio whatsapp ai", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>WhatsApp AI Assistant With Persistent Memory</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your WhatsApp AI assistant forgets everything after a restart. Every conversation starts from scratch, users get frustrated repeating context, and your bot feels broken. Here's how to fix persistent memory for WhatsApp bots built with Twilio or Meta's API using a simple key-value store that survives restarts.</p>
+<h2>The Problem: WhatsApp Bots Have Amnesia</h2>
+<p>WhatsApp AI assistants are stateless by design. When your Flask/FastAPI server restarts, crashes, or scales, all chat history vanishes. Your bot can't remember:</p>
+<ul>
+<li>Previous conversation context</li>
+<li>User preferences or settings</li>
+<li>Multi-turn dialog state</li>
+<li>Custom instructions per user</li>
+</ul>
+<p>This breaks user experience. Imagine telling your AI assistant your name, preferences, and context every single conversation. Users abandon bots that can't maintain basic continuity.</p>
+<p>The core issue: WhatsApp webhooks are HTTP requests. Your server processes the message, sends a response, and forgets everything. No built-in persistence exists between webhook calls. You need external storage that persists across process restarts.</p>
+<h2>The Fix: Persistent Memory in 3 Lines</h2>
+<p>Install BotWire Memory for instant persistent storage:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Add memory to your WhatsApp webhook handler:</p>
+<pre><code class="lang-python">from botwire import Memory
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def whatsapp_webhook():
+    data = request.json
+    user_id = data['entry'][0]['changes'][0]['value']['messages'][0]['from']
+    message = data['entry'][0]['changes'][0]['value']['messages'][0]['text']['body']
+    
+    # Persistent memory - survives restarts
+    memory = Memory(f"whatsapp-{user_id}")
+    
+    # Store conversation context
+    memory.set("last_message", message)
+    memory.set("message_count", memory.get("message_count", 0) + 1)
+    
+    # Your AI logic here
+    response = generate_ai_response(message, memory)
+    send_whatsapp_message(user_id, response)
+    
+    return "OK"</code></pre>
+<h2>How It Works</h2>
+<p>The <code>Memory</code> class creates a namespaced key-value store per user. Each WhatsApp user gets isolated storage that persists across server restarts, deployments, and crashes.</p>
+<p><strong>Key patterns for whatsapp chatbot state:</strong></p>
+<pre><code class="lang-python">from botwire import Memory
+
+def handle_whatsapp_message(user_id, message):
+    memory = Memory(f"user-{user_id}")
+    
+    # Store user context
+    if "my name is" in message.lower():
+        name = extract_name(message)
+        memory.set("user_name", name)
+    
+    # Conversation history (last 10 messages)
+    history = memory.get("history", [])
+    history.append({"user": message, "timestamp": time.time()})
+    history = history[-10:]  # Keep last 10
+    memory.set("history", history)
+    
+    # User preferences
+    if "I prefer" in message:
+        prefs = memory.get("preferences", {})
+        prefs["communication_style"] = "formal"
+        memory.set("preferences", prefs)
+        
+    # Multi-turn dialog state
+    memory.set("last_intent", detect_intent(message))
+    memory.set("conversation_stage", "collecting_info")</code></pre>
+<p>Memory operations are synchronous HTTP calls to botwire.dev. Each namespace gets 1000 writes/day free, unlimited reads. Data persists indefinitely unless you delete it. TTL and key listing work as expected:</p>
+<pre><code class="lang-python"># Set expiring data
+memory.set("temp_token", "abc123", ttl=3600)  # 1 hour
+
+# List all keys
+keys = memory.list_keys()
+
+# Delete specific data
+memory.delete("old_conversation")</code></pre>
+<p>Cross-process access works automatically. Multiple server instances share the same user memory.</p>
+<h2>Twilio WhatsApp Integration</h2>
+<p>For Twilio WhatsApp bots, integrate memory into your webhook handler:</p>
+<pre><code class="lang-python">from twilio.twiml.messaging_response import MessagingResponse
+from botwire import Memory
+import openai
+
+@app.route('/twilio-webhook', methods=['POST'])
+def twilio_whatsapp():
+    user_phone = request.form['From']  # whatsapp:+1234567890
+    message_body = request.form['Body']
+    
+    # Persistent memory per phone number
+    memory = Memory(f"twilio-{user_phone}")
+    
+    # Build conversation context
+    chat_history = memory.get("messages", [])
+    chat_history.append({"role": "user", "content": message_body})
+    
+    # Call OpenAI with history
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=chat_history,
+        max_tokens=150
+    )
+    
+    ai_message = response.choices[0].message.content
+    chat_history.append({"role": "assistant", "content": ai_message})
+    
+    # Persist updated history (keep last 20 messages)
+    memory.set("messages", chat_history[-20:])
+    
+    # Send Twilio response
+    twiml = MessagingResponse()
+    twiml.message(ai_message)
+    return str(twiml)</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector/semantic search</strong>: This isn't a vector database. Use Pinecone/Weaviate for embedding similarity.</li>
+<li><strong>High-throughput applications</strong>: 1000 writes/day limit. Use Redis for thousands of writes per minute.</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP calls add ~50-200ms. Use in-memory cache for microsecond responses.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not Redis?</strong> Redis requires hosting, configuration, and scaling. BotWire Memory works instantly with zero setup. Perfect for prototypes and small-scale bots.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes/day per namespace forever. No credit card, no expiration. Paid plans exist for higher limits.</p>
+<p><strong>What about privacy?</strong> Data is stored on botwire.dev servers. For sensitive data, self-host the open-source version (single FastAPI + SQLite file).</p>
+<p>Give your WhatsApp AI assistant the memory it deserves. Users will notice the difference immediately - no more repeating context or starting conversations from scratch.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Get started at https://botwire.dev</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

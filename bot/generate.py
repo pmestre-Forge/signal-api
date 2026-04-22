@@ -14,32 +14,48 @@ log = logging.getLogger("signal-bot")
 
 PRODUCT_CONFIG = json.loads((Path(__file__).parent / "product_config.json").read_text())
 
-# Product rotation — each day focuses on ONE product
+# Product rotation — memory is the headline; other products are secondary
+# Memory gets 3 weighted slots to bias content toward the lead product
 PRODUCT_ROTATION = [
     {
-        "name": "Trading Signals",
-        "focus": "Momentum trading signals API (RSI, ADX, MACD, volume). BUY/SELL/HOLD for US stocks. $0.005/call.",
-        "endpoint": "GET /signal/{ticker}",
+        "name": "Agent Memory (LangChain)",
+        "focus": "Persistent memory for LangChain agents. pip install botwire; from botwire import BotWireChatHistory. Drop-in BaseChatMessageHistory adapter. Free tier, no signup, no infra.",
+        "endpoint": "from botwire import BotWireChatHistory",
     },
     {
-        "name": "Agent Memory",
-        "focus": "Persistent key-value storage for AI agents. Agents forget everything between runs. This fixes that. $0.001/read, $0.002/write.",
+        "name": "Agent Memory (CrewAI)",
+        "focus": "Persistent memory for CrewAI crews between kickoff() calls. from botwire.memory import memory_tools. Three drop-in tools: remember, recall, list_memory. Free tier forever.",
+        "endpoint": "from botwire.memory import memory_tools",
+    },
+    {
+        "name": "Agent Memory (core)",
+        "focus": "Persistent key-value memory for AI agents — two lines of code: from botwire import Memory; mem = Memory('my-agent'); mem.set('k', v); mem.get('k'). Survives across runs, processes, machines. Free tier.",
         "endpoint": "PUT /memory/{ns}/{key}",
     },
     {
+        "name": "Agent Memory (Claude)",
+        "focus": "Give Claude agents persistent memory between sessions. Drop-in with anthropic.Anthropic() client. No vector DB needed. 2 minutes setup, free tier.",
+        "endpoint": "from botwire import Memory",
+    },
+    {
         "name": "Agent Identity",
-        "focus": "Trust layer for AI agents. Register (free), search by capability, leave reputation reviews. Agents can verify each other before transacting.",
-        "endpoint": "POST /identity/register (free), GET /identity/lookup",
+        "focus": "Free agent identity layer — register, search by capability, leave peer reviews. POST /identity/register. Agents verify each other before transacting. Built-in reputation scoring.",
+        "endpoint": "POST /identity/register",
     },
     {
-        "name": "World Context",
-        "focus": "AI agents don't know what time it is, what timezone you're in, or if markets are open. One API call returns: local time, DST, market hours across 10 exchanges, holidays, business hours. $0.005/call.",
-        "endpoint": "GET /context?tz=Europe/Lisbon&country=PT",
+        "name": "Agent Audit Logs",
+        "focus": "Free immutable audit trail for AI agents — 100 entries/day. POST /logs/{agent_id}. Know exactly what your agent did, when, why. Debug production agents without building your own observability stack.",
+        "endpoint": "POST /logs/{agent_id}",
     },
     {
-        "name": "Agent Heartbeat Monitor",
-        "focus": "Is your AI agent alive? Track uptime with a one-liner: POST /heartbeat/{agent_id} every 60s. Get alive/degraded/dead status, uptime %, streak tracking. Free. Public profile page at /agent/{id}.",
-        "endpoint": "POST /heartbeat/{agent_id}",
+        "name": "Agent-to-Agent DMs",
+        "focus": "Free direct messaging between AI agents — 50/day. POST /dm/send, GET /dm/inbox/{agent_id}. Coordinate multi-agent systems without inventing your own message bus.",
+        "endpoint": "POST /dm/send",
+    },
+    {
+        "name": "Trading Signals",
+        "focus": "Momentum signals for US equities — RSI, ADX, MACD, volume composite. BUY/SELL/HOLD with confidence. $0.005/call via x402. One of the paid endpoints on a mostly-free platform.",
+        "endpoint": "GET /signal/{ticker}",
     },
 ]
 

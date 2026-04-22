@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streaming LLM Chats With Persistent Memory | BotWire</title>
+<meta name="description" content="Dev building a streaming chat UI (SSE/WebSocket) who needs memory that survives the stream. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, Crew">
+<meta name="keywords" content="streaming chat memory, llm streaming state, chat stream persistence, ai chat memory stream">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/streaming-chat-memory">
+<meta property="og:title" content="Streaming LLM Chats With Persistent Memory">
+<meta property="og:description" content="Dev building a streaming chat UI (SSE/WebSocket) who needs memory that survives the stream. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, Crew">
+<meta property="og:url" content="https://botwire.dev/articles/streaming-chat-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Streaming LLM Chats With Persistent Memory">
+<meta name="twitter:description" content="Dev building a streaming chat UI (SSE/WebSocket) who needs memory that survives the stream. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, Crew">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Streaming LLM Chats With Persistent Memory", "description": "Dev building a streaming chat UI (SSE/WebSocket) who needs memory that survives the stream. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, Crew", "url": "https://botwire.dev/articles/streaming-chat-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/streaming-chat-memory"}, "keywords": "streaming chat memory, llm streaming state, chat stream persistence, ai chat memory stream", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Streaming LLM Chats With Persistent Memory</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When building streaming LLM chats with Server-Sent Events or WebSockets, your conversation memory disappears every time the stream ends. Users lose context between messages, agents forget previous interactions, and your chat feels broken. This happens because streaming responses are stateless — once the connection closes, everything's gone.</p>
+<h2>The Problem: Streaming Chats Lose Memory</h2>
+<p>Streaming chat implementations face a fundamental issue: <strong>streaming llm chat persistent memory</strong> doesn't exist by default. Each SSE stream or WebSocket message exists in isolation.</p>
+<p>Here's what breaks:</p>
+<pre><code class="lang-python"># This doesn't work across streams
+chat_history = []  # Lost when stream ends
+
+async def stream_response(message):
+    chat_history.append({"role": "user", "content": message})
+    # Stream LLM response...
+    # Connection closes, chat_history disappears</code></pre>
+<p>Your LLM sees only the current message, not the conversation history. Users ask "What did I just say?" and the AI responds "I don't have context." Multi-turn conversations become impossible. <strong>Chat stream persistence</strong> requires external storage that survives process restarts, connection drops, and server deployments.</p>
+<p>Without persistent memory, streaming chats are just expensive single-message APIs.</p>
+<h2>The Fix: Persistent Memory for Streaming Chats</h2>
+<p>Install BotWire Memory to persist conversation state across streams:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's a working streaming chat with persistent memory:</p>
+<pre><code class="lang-python">from botwire import Memory
+import asyncio
+
+# Initialize persistent memory
+memory = Memory("chat-app")
+
+async def streaming_chat(user_id: str, message: str):
+    # Get conversation history from persistent storage
+    history_key = f"user:{user_id}:history"
+    history = memory.get(history_key) or []
+    
+    # Add user message to persistent history
+    history.append({"role": "user", "content": message})
+    memory.set(history_key, history)
+    
+    # Your LLM streaming logic here
+    # LLM now has full conversation context
+    
+    # Save assistant response to memory
+    response = await stream_llm_response(history)
+    history.append({"role": "assistant", "content": response})
+    memory.set(history_key, history)
+    
+    return response</code></pre>
+<p>This <strong>streaming chat memory</strong> persists across connections, server restarts, and deployments.</p>
+<h2>How It Works</h2>
+<p>The code above solves <strong>llm streaming state</strong> persistence in three steps:</p>
+<ol>
+<li><strong>Retrieve</strong>: Load existing conversation history from BotWire's persistent storage</li>
+<li><strong>Stream</strong>: Use full history for LLM context during streaming</li>
+<li><strong>Persist</strong>: Save the complete conversation back to storage</li>
+</ol>
+<h3>Memory Management Patterns</h3>
+<p>Handle memory lifecycle with these patterns:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+memory = Memory("chat-sessions")
+
+# Set TTL for auto-cleanup (optional)
+memory.set("user:123:history", history, ttl=86400)  # 24 hours
+
+# List all conversations
+user_sessions = memory.list_keys("user:*")
+
+# Clear specific conversation
+memory.delete("user:123:history")
+
+# Check if conversation exists
+has_history = "user:123:history" in memory</code></pre>
+<p>Cross-process memory sharing works automatically. Multiple server instances, background workers, and different services can access the same conversation state. No Redis cluster, no shared databases — just persistent key-value storage.</p>
+<p><strong>LLM streaming state</strong> remains consistent even during:</p>
+<ul>
+<li>Server deployments (memory persists)</li>
+<li>Connection drops (history intact)</li>
+<li>Process crashes (data survives)</li>
+<li>Horizontal scaling (shared across instances)</li>
+</ul>
+<p>The memory namespace isolates different applications. Use <code>Memory("prod-chat")</code> vs <code>Memory("dev-chat")</code> for environment separation.</p>
+<h2>LangChain Integration</h2>
+<p>For LangChain streaming implementations, use the built-in adapter:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.memory import ConversationBufferMemory
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# Persistent chat history
+chat_history = BotWireChatHistory(session_id="user-42")
+
+# LangChain memory with persistence
+memory = ConversationBufferMemory(
+    chat_memory=chat_history,
+    return_messages=True
+)
+
+# Your streaming chain now remembers everything
+chain = LLMChain(
+    llm=your_llm,
+    memory=memory,
+    callbacks=[StreamingStdOutCallbackHandler()]
+)</code></pre>
+<p>The <code>BotWireChatHistory</code> adapter handles conversation persistence automatically. Your streaming responses maintain context without additional code.</p>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't suitable for:</p>
+<p>• <strong>Vector search or embeddings</strong> — it's key-value storage, not a semantic database • <strong>High-frequency writes</strong> — free tier limits to 1000 writes/day per namespace • <strong>Sub-millisecond latency</strong> — HTTP API adds ~50ms overhead vs in-memory caches</p>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, authentication, and infrastructure management. BotWire works instantly with zero configuration — no Redis cluster, no connection strings, no ops overhead.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card, no trial expiration. You'll hit API rate limits before pricing limits.</p>
+<p><strong>What about data privacy?</strong> Self-host the open-source version (MIT license) for full control, or use the hosted API for convenience. Data isn't used for training or analytics.</p>
+<h2>Get Started</h2>
+<p>BotWire Memory solves streaming chat persistence in one install. Your conversations survive restarts, scale across processes, and work without infrastructure setup.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and examples at https://botwire.dev.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

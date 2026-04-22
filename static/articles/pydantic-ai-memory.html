@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adding Persistent Memory to Pydantic AI Agents | BotWire</title>
+<meta name="description" content="Pydantic AI user who wants state between Agent.run() calls. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="pydantic ai memory, pydantic agents state, pydantic-ai memory, pydantic agent persistence">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/pydantic-ai-memory">
+<meta property="og:title" content="Adding Persistent Memory to Pydantic AI Agents">
+<meta property="og:description" content="Pydantic AI user who wants state between Agent.run() calls. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/pydantic-ai-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Adding Persistent Memory to Pydantic AI Agents">
+<meta name="twitter:description" content="Pydantic AI user who wants state between Agent.run() calls. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Adding Persistent Memory to Pydantic AI Agents", "description": "Pydantic AI user who wants state between Agent.run() calls. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/pydantic-ai-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/pydantic-ai-memory"}, "keywords": "pydantic ai memory, pydantic agents state, pydantic-ai memory, pydantic agent persistence", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Adding Persistent Memory to Pydantic AI Agents</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Pydantic AI agents lose their memory between <code>Agent.run()</code> calls. Each execution starts fresh, with no knowledge of previous conversations or state. This breaks chatbots, multi-step workflows, and any agent that needs to remember context across interactions.</p>
+<h2>The Problem: Stateless Agents in a Stateful World</h2>
+<p>By design, Pydantic AI agents are stateless. When you call <code>Agent.run()</code>, the agent processes the input, returns a response, and forgets everything. This works fine for one-shot tasks, but breaks down when you need:</p>
+<ul>
+<li><strong>Conversational memory</strong>: "What did we discuss earlier?"</li>
+<li><strong>Workflow state</strong>: Multi-step processes that span multiple runs</li>
+<li><strong>User preferences</strong>: Settings that persist across sessions</li>
+<li><strong>Cross-process persistence</strong>: Memory that survives restarts</li>
+</ul>
+<pre><code class="lang-python">from pydantic_ai import Agent
+
+agent = Agent("gpt-4")
+agent.run("My name is Sarah")  # "Nice to meet you, Sarah!"
+agent.run("What's my name?")   # "I don't have that information"</code></pre>
+<p>The second call fails because pydantic agents state doesn't persist. Each <code>run()</code> is isolated, making it impossible to build stateful applications.</p>
+<h2>The Fix: Add BotWire Memory</h2>
+<p>BotWire provides persistent key-value memory for Pydantic AI agents. Install it and add memory to any agent in three lines:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from pydantic_ai import Agent
+from botwire import Memory
+
+# Create agent with memory
+agent = Agent("gpt-4")
+memory = Memory("user-session")
+
+# Remember across runs
+result1 = agent.run("My name is Sarah")
+memory.set("user_name", "Sarah")
+
+result2 = agent.run("What's my name?")
+user_name = memory.get("user_name")  # "Sarah"</code></pre>
+<h2>How It Works</h2>
+<p>BotWire Memory stores data remotely at <code>https://botwire.dev</code> with no signup required. Data persists across processes, machines, and restarts.</p>
+<h3>Basic Operations</h3>
+<pre><code class="lang-python">from botwire import Memory
+
+memory = Memory("my-agent")
+
+# Store any JSON-serializable data
+memory.set("conversation_count", 5)
+memory.set("user_preferences", {"theme": "dark", "language": "en"})
+
+# Retrieve with optional defaults
+count = memory.get("conversation_count", 0)
+prefs = memory.get("user_preferences", {})
+
+# List all keys
+keys = memory.list_keys()  # ["conversation_count", "user_preferences"]</code></pre>
+<h3>Real-World Pattern: Conversation Memory</h3>
+<pre><code class="lang-python">from pydantic_ai import Agent
+from botwire import Memory
+import json
+
+class ConversationalAgent:
+    def __init__(self, user_id: str):
+        self.agent = Agent("gpt-4")
+        self.memory = Memory(f"chat-{user_id}")
+    
+    def run(self, message: str) -&gt; str:
+        # Load conversation history
+        history = self.memory.get("history", [])
+        
+        # Build context-aware prompt
+        context = "\n".join([f"User: {h['user']}\nBot: {h['bot']}" for h in history[-5:]])
+        prompt = f"Previous conversation:\n{context}\n\nUser: {message}\nBot:"
+        
+        # Get response
+        response = self.agent.run(prompt)
+        
+        # Save to memory
+        history.append({"user": message, "bot": response})
+        self.memory.set("history", history)
+        
+        return response
+
+# Usage persists across instances
+bot = ConversationalAgent("user-123")
+bot.run("I like pizza")
+
+# Later, different process
+bot2 = ConversationalAgent("user-123")  # Remembers pizza preference</code></pre>
+<p>Memory operations handle TTL, cleanup, and cross-process synchronization automatically. Data is stored as JSON, supporting strings, numbers, lists, and dictionaries.</p>
+<h2>Integration with Pydantic AI Dependencies</h2>
+<p>For complex pydantic-ai memory needs, inject memory directly into agent dependencies:</p>
+<pre><code class="lang-python">from pydantic_ai import Agent, RunContext
+from botwire import Memory
+from dataclasses import dataclass
+
+@dataclass
+class AgentDeps:
+    memory: Memory
+
+def get_user_context(ctx: RunContext[AgentDeps]) -&gt; str:
+    """Tool that provides persistent context"""
+    return ctx.deps.memory.get("user_context", "No previous context")
+
+def save_user_context(ctx: RunContext[AgentDeps], context: str) -&gt; str:
+    """Tool that saves context for later"""
+    ctx.deps.memory.set("user_context", context)
+    return "Context saved"
+
+agent = Agent(
+    "gpt-4",
+    deps_type=AgentDeps,
+    tools=[get_user_context, save_user_context]
+)
+
+# Run with persistent memory
+memory = Memory("user-sessions")
+deps = AgentDeps(memory=memory)
+result = agent.run("Remember that I'm working on a Python project", deps=deps)</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector/semantic search</strong>: BotWire is key-value storage, not a vector database</li>
+<li><strong>High-throughput applications</strong>: 1000 writes/day limit on free tier</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP calls add ~50-200ms overhead</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not Redis or a database?</strong> BotWire requires zero setup - no servers, no configuration, no connection strings. Just <code>pip install</code> and start storing data.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes per day per namespace, 50MB storage, unlimited reads. Forever free tier with no credit card required.</p>
+<p><strong>What about data privacy?</strong> Data is stored remotely but you can self-host the open-source version (MIT license) for complete control over your data.</p>
+<h2>Get Started</h2>
+<p>Add persistent memory to your Pydantic AI agents in 30 seconds:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting instructions at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

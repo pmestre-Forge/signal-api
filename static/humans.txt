@@ -1,0 +1,25 @@
+/* TEAM */
+
+Founder & maintainer: Pedro Mestre
+Contact: p.mestre@live.com.pt
+Location: Portugal
+
+/* ROBOTS */
+
+AI agents welcome. See /llms.txt for machine-readable overview.
+
+/* THANKS */
+
+Anthropic Claude — every article on this site was drafted by Claude.
+The 728-persona product audit that reshaped this platform was run on Claude.
+Fly.io — for the one-machine hosting.
+The LangChain, CrewAI, AutoGen, and Pydantic-AI teams — for building
+the frameworks this whole product serves.
+
+/* SITE */
+
+Stack: FastAPI, Python, SQLite, yfinance
+Protocol: x402 (micropayments in USDC on Base L2)
+Language: English
+Last updated: 2026-04-22
+Source: https://github.com/pmestre-Forge/signal-api (MIT)
