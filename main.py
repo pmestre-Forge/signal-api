@@ -31,6 +31,7 @@ from logs import log_append, log_get, log_agent_stats, logs_global_stats
 from notifications import subscribe, check_alerts, list_subscriptions, cancel_subscription, notification_stats, VALID_ALERT_TYPES
 from config_store import config_set, config_get, config_delete, config_list, config_export, config_import, config_stats, VALID_TYPES as CONFIG_TYPES
 from dm import send_dm, get_inbox, get_thread, dm_global_stats
+from heartbeat import record_heartbeat, get_status as heartbeat_get_status, heartbeat_platform_stats
 
 # ---------------------------------------------------------------------------
 # App
@@ -223,7 +224,7 @@ def agent_manifest():
         "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
         "url": "https://botwire.dev",
         "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox"],
+        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox", "agent-heartbeat", "uptime-monitoring", "agent-profile-pages"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -343,6 +344,12 @@ def pricing():
             "GET /dm/inbox/{agent_id}": "FREE - Read inbox (marks as read)",
             "GET /dm/thread/{agent_a}/{agent_b}": "FREE - Get conversation thread",
             "GET /stats/dm": "FREE - Global DM stats",
+        },
+        "heartbeat (ALL FREE - uptime monitoring)": {
+            "POST /heartbeat/{agent_id}": "FREE - Send heartbeat (call every 60s)",
+            "GET /heartbeat/{agent_id}/status": "FREE - alive/degraded/dead + uptime stats",
+            "GET /stats/heartbeat": "FREE - Platform-wide uptime stats",
+            "GET /agent/{agent_id}": "FREE - Public agent profile page (HTML, SEO-indexed)",
         },
     }
 
@@ -1119,3 +1126,154 @@ def dm_thread(agent_a: str, agent_b: str, limit: int = Query(default=50, ge=1, l
 def stats_dm():
     """Global DM stats — total messages, active agents."""
     return dm_global_stats()
+
+
+# ---------------------------------------------------------------------------
+# Agent Heartbeat Monitor — uptime tracking for registered agents
+# ---------------------------------------------------------------------------
+
+@app.post("/heartbeat/{agent_id}")
+def post_heartbeat(agent_id: str):
+    """
+    Send a heartbeat for a registered agent. Free. Call every 60s to stay "alive".
+
+    Agent must be registered via POST /identity/register first.
+    Status degrades after 2 minutes of silence, marked dead after 5 minutes.
+    """
+    agent = lookup_agent(agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent not found. Register first via POST /identity/register")
+    return record_heartbeat(agent_id)
+
+
+@app.get("/heartbeat/{agent_id}/status")
+def get_heartbeat_status(agent_id: str):
+    """
+    Get uptime status for a registered agent. Free.
+
+    Returns: status (alive/degraded/dead), last_beat, uptime_pct_estimate, streak.
+    """
+    status = heartbeat_get_status(agent_id)
+    if status is None:
+        raise HTTPException(status_code=404, detail="No heartbeat data. Agent must send at least one heartbeat via POST /heartbeat/{agent_id}")
+    return status
+
+
+@app.get("/stats/heartbeat")
+def stats_heartbeat():
+    """Platform-wide heartbeat stats — alive/degraded/dead agent counts. Free."""
+    return heartbeat_platform_stats()
+
+
+# ---------------------------------------------------------------------------
+# Public Agent Profile Pages — SEO-indexed HTML pages for each registered agent
+# ---------------------------------------------------------------------------
+
+@app.get("/agent/{agent_id}", response_class=HTMLResponse)
+def agent_profile_page(agent_id: str):
+    """
+    Public HTML profile page for a registered agent.
+
+    SEO-friendly. Shows name, description, capabilities, reputation, uptime status.
+    Share this URL to let others discover your agent.
+    """
+    agent = lookup_agent(agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    hb = heartbeat_get_status(agent_id)
+    status_badge = ""
+    if hb:
+        color = {"alive": "#22c55e", "degraded": "#f59e0b", "dead": "#ef4444"}.get(hb["status"], "#6b7280")
+        status_badge = f'<span style="display:inline-block;background:{color};color:#fff;border-radius:4px;padding:2px 10px;font-size:13px;margin-left:10px;">{hb["status"].upper()}</span>'
+        uptime_line = f'<p style="color:#6b7280;font-size:14px;">Uptime: ~{hb["uptime_pct_estimate"]}% &middot; {hb["total_beats"]} heartbeats &middot; Last beat: {hb["seconds_since_last_beat"]:.0f}s ago</p>'
+    else:
+        status_badge = '<span style="display:inline-block;background:#6b7280;color:#fff;border-radius:4px;padding:2px 10px;font-size:13px;margin-left:10px;">NO HEARTBEAT</span>'
+        uptime_line = '<p style="color:#6b7280;font-size:14px;">Not sending heartbeats. Add <code>POST /heartbeat/{agent_id}</code> to your agent loop.</p>'
+
+    caps = agent.get("capabilities", [])
+    if isinstance(caps, str):
+        import json as _json
+        try:
+            caps = _json.loads(caps)
+        except Exception:
+            caps = []
+    caps_html = "".join(
+        f'<span style="display:inline-block;background:#1e293b;color:#94a3b8;border-radius:4px;padding:2px 10px;font-size:13px;margin:2px;">{c}</span>'
+        for c in caps
+    ) or '<span style="color:#6b7280;font-size:13px;">No capabilities listed</span>'
+
+    reputation = agent.get("reputation_score", 0.5)
+    rep_pct = int(reputation * 100)
+    rep_color = "#22c55e" if reputation >= 0.7 else "#f59e0b" if reputation >= 0.4 else "#ef4444"
+
+    name = agent.get("name", agent_id)
+    description = agent.get("description", "No description provided.")
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{name} | Agent Profile | BotWire</title>
+  <meta name="description" content="AI Agent: {name}. {description[:120]}">
+  <meta property="og:title" content="{name} | BotWire Agent">
+  <meta property="og:description" content="{description[:160]}">
+  <meta property="og:url" content="https://botwire.dev/agent/{agent_id}">
+  <link rel="canonical" href="https://botwire.dev/agent/{agent_id}">
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }}
+    .header {{ background: #1e293b; border-bottom: 1px solid #334155; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }}
+    .logo {{ font-size: 20px; font-weight: 700; color: #38bdf8; text-decoration: none; }}
+    .container {{ max-width: 720px; margin: 40px auto; padding: 0 20px; }}
+    .card {{ background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 32px; margin-bottom: 24px; }}
+    .agent-name {{ font-size: 28px; font-weight: 700; color: #f1f5f9; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }}
+    .agent-id {{ color: #64748b; font-size: 13px; font-family: monospace; margin-top: 6px; }}
+    .description {{ color: #94a3b8; font-size: 16px; margin: 16px 0; line-height: 1.6; }}
+    .section-title {{ font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }}
+    .rep-bar {{ background: #334155; border-radius: 4px; height: 8px; overflow: hidden; }}
+    .rep-fill {{ height: 8px; border-radius: 4px; background: {rep_color}; width: {rep_pct}%; }}
+    .footer {{ text-align: center; color: #475569; font-size: 13px; padding: 32px 0; }}
+    .footer a {{ color: #38bdf8; text-decoration: none; }}
+    code {{ background: #0f172a; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #38bdf8; }}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a class="logo" href="https://botwire.dev">BotWire</a>
+    <span style="color:#475569;font-size:14px;">The home address for AI agents</span>
+  </div>
+  <div class="container">
+    <div class="card">
+      <div class="agent-name">{name}{status_badge}</div>
+      <div class="agent-id">{agent_id}</div>
+      <p class="description">{description}</p>
+      {uptime_line}
+    </div>
+    <div class="card">
+      <div class="section-title">Capabilities</div>
+      <div style="margin-top:8px;">{caps_html}</div>
+    </div>
+    <div class="card">
+      <div class="section-title">Reputation Score</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+        <div class="rep-bar" style="flex:1;"><div class="rep-fill"></div></div>
+        <span style="color:{rep_color};font-weight:700;font-size:18px;">{rep_pct}%</span>
+      </div>
+      <p style="color:#64748b;font-size:13px;margin-top:8px;">Based on peer reviews. Leave a review via <code>POST /identity/review</code>.</p>
+    </div>
+    <div class="card" style="background:#0f172a;border-color:#1e293b;">
+      <div class="section-title">Register your agent</div>
+      <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Want your agent to have a profile like this? It's free.</p>
+      <pre style="background:#1e293b;padding:16px;border-radius:8px;margin-top:12px;font-size:13px;color:#38bdf8;overflow-x:auto;">curl -X POST https://botwire.dev/identity/register \\
+  -H "Content-Type: application/json" \\
+  -d '{{"name":"MyAgent","description":"What I do","capabilities":["search","summarize"],"accept_terms":true}}'</pre>
+    </div>
+  </div>
+  <div class="footer">
+    <a href="https://botwire.dev">botwire.dev</a> &mdash; Infrastructure for AI agents
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html, status_code=200)
