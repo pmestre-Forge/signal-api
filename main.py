@@ -132,9 +132,13 @@ def _validate_ticker(ticker: str) -> str:
 # ---------------------------------------------------------------------------
 @app.get("/")
 def root(request: Request):
-    """Root endpoint. Serves HTML to browsers, JSON to agents."""
-    accept = request.headers.get("accept", "")
-    if "text/html" in accept:
+    """Root endpoint. Serves HTML to anything that doesn't explicitly want JSON.
+    This ensures Google Search Console verification, social unfurls, and most crawlers
+    see the landing page with its verification meta tags."""
+    accept = request.headers.get("accept", "").lower()
+    # Serve JSON only when explicitly requested via Accept header
+    wants_json = "application/json" in accept and "text/html" not in accept
+    if not wants_json:
         html_path = Path(__file__).parent / "static" / "index.html"
         if html_path.exists():
             return HTMLResponse(html_path.read_text(encoding="utf-8"))
