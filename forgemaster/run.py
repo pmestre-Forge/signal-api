@@ -10,6 +10,7 @@ from pathlib import Path
 
 # Add parent to path so imports work
 sys.path.insert(0, str(Path(__file__).parent.parent / "bot"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from operate import run_operations
 from intelligence import update_intelligence
@@ -40,13 +41,42 @@ def run_forgemaster() -> dict:
         for a in ops["actions_taken"]:
             print(f"  ACTION: {a}", flush=True)
 
-    # --- Job 2: Intelligence ---
-    print("\n[2/3] INTELLIGENCE — gathering data...", flush=True)
+    # --- Job 2: CEO + Legion review of any pending proposals ---
+    print("\n[2/4] GOVERNANCE — reviewing pending proposals...", flush=True)
+    ceo_results: list = []
+    try:
+        from ceo_agent import process_pending
+        ceo_results = process_pending()
+        if not ceo_results:
+            print("  No pending proposals.", flush=True)
+        else:
+            for r in ceo_results:
+                if "error" in r:
+                    print(f"  {r['proposal_id']}: ERROR {r['error']}", flush=True)
+                    continue
+                d = r["decision"]
+                print(f"  {r['proposal_id']}: {d['decision']} (conf {d['confidence']:.0%}) — {d['reasoning'][:80]}", flush=True)
+    except Exception as e:
+        print(f"  Governance skipped: {e}", flush=True)
+
+    # --- Job 3: Intelligence ---
+    print("\n[3/4] INTELLIGENCE — gathering data...", flush=True)
     intel_entry = update_intelligence(ops)
+    # Append governance results into the intel entry so the email covers them
+    if ceo_results:
+        lines = ["", "--- CEO decisions today ---"]
+        for r in ceo_results:
+            if "error" in r:
+                lines.append(f"  FAILED {r['proposal_id']}: {r['error']}")
+                continue
+            d = r["decision"]
+            lines.append(f"  [{d['decision']}] {r['proposal_id']} (conf {d['confidence']:.0%})")
+            lines.append(f"    {d['reasoning'][:200]}")
+        intel_entry = (intel_entry or "") + "\n".join(lines)
     print(f"  Intelligence updated", flush=True)
 
-    # --- Job 3: Report ---
-    print("\n[3/3] REPORT — building daily report...", flush=True)
+    # --- Job 4: Report ---
+    print("\n[4/4] REPORT — building daily report...", flush=True)
     report = build_report(ops, intel_entry)
 
     # Save to file

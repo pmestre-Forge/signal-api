@@ -6,7 +6,9 @@ Agents pay per call in USDC on Base L2. No signup, no API keys, no subscriptions
 
 import json
 import re
+import sys
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -333,6 +335,71 @@ def playground():
     if p.exists():
         return HTMLResponse(p.read_text(encoding="utf-8"))
     raise HTTPException(status_code=404)
+
+
+# ---------------------------------------------------------------------------
+# Governance: proposal queue + CEO/Legion review
+# ---------------------------------------------------------------------------
+_FM_DIR = Path(__file__).parent / "forgemaster"
+if str(_FM_DIR) not in sys.path:
+    sys.path.insert(0, str(_FM_DIR))
+
+
+class ProposalBody(BaseModel):
+    title: str
+    description: str
+    type: str  # feature|product|pricing|content|infra|positioning|partnership
+    proposer: str = "unknown"
+
+
+@app.post("/proposals", include_in_schema=False)
+def create_proposal(body: ProposalBody):
+    """Submit a new proposal for Legion + CEO review. Review runs async via daily forgemaster."""
+    import proposals as prop_store
+    if body.type not in {"feature", "product", "pricing", "content", "infra", "positioning", "partnership"}:
+        raise HTTPException(status_code=400, detail="Invalid type")
+    if len(body.title) > 200 or len(body.description) > 4000:
+        raise HTTPException(status_code=400, detail="Title or description too long")
+    p = prop_store.create(
+        title=body.title.strip(),
+        description=body.description.strip(),
+        ptype=body.type,  # type: ignore[arg-type]
+        proposer=body.proposer.strip()[:80] or "unknown",
+    )
+    return {"id": p.id, "status": p.status, "created_at": p.created_at}
+
+
+@app.get("/proposals", include_in_schema=False)
+def list_proposals(status: Optional[str] = None):
+    """List proposals, optionally filtered by status."""
+    import proposals as prop_store
+    items = prop_store.list_all()
+    if status:
+        items = [p for p in items if p.status == status]
+    # Redact raw audit details; return summary only
+    return [
+        {
+            "id": p.id,
+            "title": p.title,
+            "type": p.type,
+            "proposer": p.proposer,
+            "status": p.status,
+            "created_at": p.created_at,
+            "legion_verdict": (p.legion_verdict or {}).get("verdict") if p.legion_verdict else None,
+            "ceo_decision": (p.ceo_decision or {}).get("decision") if p.ceo_decision else None,
+        }
+        for p in items
+    ]
+
+
+@app.get("/proposals/{pid}", include_in_schema=False)
+def get_proposal(pid: str):
+    """Full detail for a single proposal — legion brief + CEO reasoning."""
+    import proposals as prop_store
+    p = prop_store.load(pid)
+    if not p:
+        raise HTTPException(status_code=404, detail="Not found")
+    return p.to_dict()
 
 
 _EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
