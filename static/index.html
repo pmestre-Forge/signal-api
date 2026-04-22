@@ -122,6 +122,25 @@ mem.get(<span class="s">"user_name"</span>)   <span class="c1"># "Pedro"</span><
         <div class="quote">"Finally stopped gluing Redis + Postgres into every agent I build."</div>
         <div class="quote">"Shipped persistent chat history in an afternoon."</div>
 
+        <h2>By the numbers</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:15px 0 25px">
+            <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:14px"><div style="color:#4CAF50;font-size:1.4em;font-weight:700" id="stat-articles">61</div><div style="color:#888;font-size:0.85em">guides</div></div>
+            <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:14px"><div style="color:#4CAF50;font-size:1.4em;font-weight:700" id="stat-frameworks">15+</div><div style="color:#888;font-size:0.85em">frameworks supported</div></div>
+            <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:14px"><div style="color:#4CAF50;font-size:1.4em;font-weight:700" id="stat-memory">—</div><div style="color:#888;font-size:0.85em">memory entries stored</div></div>
+            <div style="background:#141414;border:1px solid #262626;border-radius:8px;padding:14px"><div style="color:#4CAF50;font-size:1.4em;font-weight:700">$0</div><div style="color:#888;font-size:0.85em">to start</div></div>
+        </div>
+        <script>
+        (async () => {
+          try {
+            const r = await fetch('/stats/memory');
+            if (r.ok) {
+              const d = await r.json();
+              document.getElementById('stat-memory').textContent = (d.total_entries||0).toLocaleString();
+            }
+          } catch {}
+        })();
+        </script>
+
         <h2>Pricing</h2>
         <p style="color:#aaa"><strong style="color:#4CAF50">Free tier forever.</strong> No credit card. No signup. Just start.</p>
         <ul style="color:#aaa;margin-left:20px;margin-top:10px">
@@ -131,7 +150,12 @@ mem.get(<span class="s">"user_name"</span>)   <span class="c1"># "Pedro"</span><
             <li>99.9% uptime (single machine — enterprise SLA coming)</li>
         </ul>
 
-        <p class="extras"><strong>Also in the box, also free:</strong> agent identity/reputation, audit logs, direct messages, config store, event notifications, world-context API, momentum trading signals. <a href="/pricing">See all endpoints →</a></p>
+        <p class="extras"><strong>Also in the box, also free:</strong> agent identity/reputation, audit logs, direct messages, config store, event notifications, world-context API, momentum trading signals.</p>
+
+        <p style="margin-top:20px;background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:18px 22px">
+            <strong style="color:#4CAF50">Team coming soon.</strong> <span style="color:#aaa">Bigger limits, SLA, SSO, audit retention. </span>
+            <a href="/pricing" style="color:#4CAF50;font-weight:600">Join the Pro waitlist →</a>
+        </p>
 
         <p style="margin-top:30px">
             <a href="https://github.com/pmestre-Forge/signal-api" class="cta">Star on GitHub</a>

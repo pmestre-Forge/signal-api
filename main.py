@@ -335,6 +335,52 @@ def playground():
     raise HTTPException(status_code=404)
 
 
+_EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+
+
+@app.post("/waitlist", include_in_schema=False)
+async def waitlist_signup(request: Request):
+    """Pro tier / partnerships waitlist. Stores emails in the platform's own Memory.
+
+    Dogfood — uses the same Memory API we sell. Body: {"email": "...", "use_case": "...", "source": "..."}
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    email = (body.get("email") or "").strip().lower()
+    use_case = (body.get("use_case") or "").strip()[:500]
+    source = (body.get("source") or "unknown").strip()[:80]
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="Invalid email")
+    # Store into memory under the internal 'waitlist' namespace, keyed by email
+    from memory import memory_set
+    import time
+    memory_set(
+        "waitlist",
+        email.replace("/", "_"),
+        json.dumps({
+            "email": email,
+            "use_case": use_case,
+            "source": source,
+            "at": int(time.time()),
+        }),
+    )
+    return {"ok": True, "message": "You're on the list. I'll email you when Pro ships."}
+
+
+@app.get("/waitlist/stats", include_in_schema=False)
+def waitlist_stats():
+    """Public count of waitlist signups (not the addresses)."""
+    from memory import memory_list
+    try:
+        result = memory_list("waitlist", limit=1000)
+        keys = result.get("keys", [])
+        return {"waitlist_size": len(keys)}
+    except Exception:
+        return {"waitlist_size": 0}
+
+
 @app.get("/og/{slug}.svg", include_in_schema=False)
 def og_image(slug: str):
     """Auto-generated OG image per article slug.
@@ -447,7 +493,13 @@ def health():
 
 
 @app.get("/pricing")
-def pricing():
+def pricing(request: Request):
+    accept = request.headers.get("accept", "").lower()
+    wants_json = "application/json" in accept and "text/html" not in accept
+    if not wants_json:
+        p = Path(__file__).parent / "static" / "pricing.html"
+        if p.exists():
+            return HTMLResponse(p.read_text(encoding="utf-8"))
     return {
         "currency": "USDC",
         "network": settings.network,
