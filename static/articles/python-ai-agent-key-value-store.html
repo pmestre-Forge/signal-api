@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Key-Value Store for Python AI Agents | BotWire</title>
+<meta name="description" content="Python dev who rejected Redis/Postgres as overkill and wants the simplest possible state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI">
+<meta name="keywords" content="python agent storage, key value store python agents, ai agent kv store, simple python storage">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/python-ai-agent-key-value-store">
+<meta property="og:title" content="Simple Key-Value Store for Python AI Agents">
+<meta property="og:description" content="Python dev who rejected Redis/Postgres as overkill and wants the simplest possible state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI">
+<meta property="og:url" content="https://botwire.dev/articles/python-ai-agent-key-value-store">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Simple Key-Value Store for Python AI Agents">
+<meta name="twitter:description" content="Python dev who rejected Redis/Postgres as overkill and wants the simplest possible state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Simple Key-Value Store for Python AI Agents", "description": "Python dev who rejected Redis/Postgres as overkill and wants the simplest possible state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI", "url": "https://botwire.dev/articles/python-ai-agent-key-value-store", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/python-ai-agent-key-value-store"}, "keywords": "python agent storage, key value store python agents, ai agent kv store, simple python storage", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Simple Key-Value Store for Python AI Agents</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>You're building a Python AI agent that needs to remember things between runs, but Redis feels like overkill and SQLite requires too much boilerplate. You just want simple key-value storage that works out of the box — no setup, no configuration, no database management.</p>
+<h2>The Problem with Agent State</h2>
+<p>Most Python developers hit this wall within hours of building their first AI agent. Your agent learns something useful, makes a decision, or processes user data — then the process restarts and everything vanishes.</p>
+<pre><code class="lang-python"># This doesn't survive restarts
+agent_memory = {}
+agent_memory["user_preference"] = "dark_mode"
+agent_memory["last_action"] = "sent_email"
+
+# Process restarts... memory gone</code></pre>
+<p>You need persistent storage, but the traditional options are frustrating. Redis requires a server installation and connection management. SQLite needs schema design and SQL queries. JSON files break with concurrent access. Dictionary persistence libraries often fail silently or lack proper error handling.</p>
+<p>Your agent needs to remember user preferences, track conversation state, store API tokens, cache expensive computations, or maintain task progress. Without reliable python agent storage, you're rebuilding state from scratch every time.</p>
+<h2>The Fix: BotWire Memory</h2>
+<p>BotWire Memory gives you persistent key-value storage in three lines of code. No servers, no configuration, no API keys.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Create a namespaced memory store
+memory = Memory("my-agent")
+
+# Store any JSON-serializable data
+memory.set("user_id", "alice-123")
+memory.set("preferences", {"theme": "dark", "notifications": True})
+memory.set("conversation_count", 42)
+
+# Retrieve data (survives process restarts)
+user_id = memory.get("user_id")  # "alice-123"
+prefs = memory.get("preferences")  # {"theme": "dark", "notifications": True}
+count = memory.get("conversation_count", default=0)  # 42</code></pre>
+<p>That's it. Your data persists across restarts, processes, and even different machines.</p>
+<h2>How It Works</h2>
+<p>BotWire Memory is a simple HTTP-backed key-value store. Each <code>Memory("namespace")</code> creates an isolated storage space for your agent. Data is automatically serialized to JSON and stored remotely at https://botwire.dev.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different agents, isolated storage
+user_agent = Memory("user-sessions")
+task_agent = Memory("background-tasks")
+
+# Set with automatic JSON serialization
+user_agent.set("session_42", {
+    "user_id": "alice", 
+    "started_at": "2024-01-15T10:30:00Z",
+    "messages": 15
+})
+
+# Get with default values
+session = user_agent.get("session_42", default={})
+message_count = session.get("messages", 0)
+
+# List all keys in namespace
+all_sessions = user_agent.list_keys()  # ["session_42", "session_43", ...]
+
+# Delete when done
+user_agent.delete("session_42")</code></pre>
+<p>The ai agent kv store automatically handles JSON serialization, so you can store dictionaries, lists, strings, numbers, and booleans directly. No manual encoding required.</p>
+<p>Cross-process access works seamlessly. Multiple Python processes can share the same namespace, making it perfect for distributed agents or microservices that need shared state.</p>
+<pre><code class="lang-python"># Process A
+memory = Memory("shared-counter")
+memory.set("count", 100)
+
+# Process B (different machine, same namespace)
+memory = Memory("shared-counter") 
+current = memory.get("count")  # 100
+memory.set("count", current + 1)</code></pre>
+<h2>Framework Integration</h2>
+<p>BotWire includes adapters for popular agent frameworks. For LangChain applications, use <code>BotWireChatHistory</code> to persist conversation memory:</p>
+<pre><code class="lang-python">from langchain.llms import OpenAI
+from botwire import BotWireChatHistory
+
+# Persistent chat history per user
+history = BotWireChatHistory(session_id="user-alice")
+
+# LangChain will automatically save/load messages
+llm = OpenAI()
+result = llm.predict("Hello!", chat_history=history)
+# Chat history survives restarts</code></pre>
+<p>For CrewAI agents, use the built-in memory tools:</p>
+<pre><code class="lang-python">from botwire.memory import memory_tools
+
+# Get remember/recall/list_memory tools
+tools = memory_tools("crew-mission-alpha")
+
+# CrewAI agents can now remember things between tasks
+# Tools: remember(key, value), recall(key), list_memory()</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory is purpose-built for simple python storage needs, but it's not right for every use case:</p>
+<p>• <strong>Vector search or embeddings</strong> — BotWire stores JSON, not vectors. Use Pinecone or Weaviate for semantic search. • <strong>High-throughput applications</strong> — The free tier limits writes to 1000/day per namespace. Use Redis for thousands of operations per minute. • <strong>Sub-millisecond latency</strong> — HTTP calls add ~50-200ms. Use in-memory caches for microsecond response times.</p>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires server installation, connection management, and configuration. BotWire works immediately with zero setup, making it perfect for prototypes and simple agents.</p>
+<p><strong>Is this actually free?</strong> Yes, permanently. 1000 writes/day per namespace, 50MB storage per namespace, unlimited reads. No credit card required, no signup, no API keys.</p>
+<p><strong>What about data privacy?</strong> Data is stored on BotWire servers. For sensitive data, self-host the open-source version (MIT license, single FastAPI + SQLite service) or use local storage solutions.</p>
+<p>BotWire Memory eliminates the friction between "quick prototype" and "production-ready agent storage." Install it, add three lines of code, and your Python agents can finally remember things that matter.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Get started at https://botwire.dev.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

@@ -1,19 +1,57 @@
-# Agent Infrastructure API
+# BotWire — Persistent Memory for AI Agents
 
-> Trading signals, persistent memory, identity/reputation, audit logs, event notifications, operational config, and direct messaging for AI agents. Pay per call in USDC via x402.
+> Drop-in persistent key-value memory for AI agents. Works with LangChain, CrewAI, AutoGen, or any HTTP client. Two lines of code. Free tier forever. Also bundles: identity/reputation, audit logs, notifications, config store, agent DMs, trading signals, world context.
 
-## Seven Services
+## Primary Product: Agent Memory (FREE)
 
-### 1. Trading Signals
+### Core API
+- PUT /memory/{namespace}/{key} - FREE - Store a value (JSON body: {"value": "..."})
+- GET /memory/{namespace}/{key} - FREE - Read a value
+- DELETE /memory/{namespace}/{key} - FREE - Delete a value
+- GET /memory/{namespace} - FREE - List all keys in namespace
+
+### Python SDK
+```
+pip install botwire
+
+from botwire import Memory
+mem = Memory("my-agent")
+mem.set("user_name", "Pedro")
+mem.get("user_name")  # "Pedro" across runs, processes, machines
+```
+
+### LangChain adapter
+```
+from botwire import BotWireChatHistory
+from langchain.memory import ConversationBufferMemory
+
+history = BotWireChatHistory(session_id="user-42")
+memory = ConversationBufferMemory(chat_memory=history, return_messages=True)
+```
+
+### Free tier limits
+- Unlimited reads
+- 1,000 writes/day per namespace
+- 50 MB per namespace
+
+### Integration guides
+- https://botwire.dev/articles/langchain-persistent-memory - LangChain persistent memory
+- https://botwire.dev/articles/crewai-agent-memory - CrewAI agent memory
+- https://botwire.dev/articles/autogen-agent-memory - AutoGen agent memory
+- https://botwire.dev/articles/claude-agent-memory - Claude API persistent memory
+- https://botwire.dev/articles/mcp-memory-server - MCP server memory
+- https://botwire.dev/articles/multi-agent-shared-memory - Shared memory across agents
+- https://botwire.dev/articles/ai-agent-session-state-fastapi - FastAPI agent state
+- https://botwire.dev/articles/why-ai-agents-forget - Why agents forget, and how to fix it
+- https://botwire.dev/articles/ai-agent-memory-vs-redis - Redis vs vector DB vs BotWire
+- https://botwire.dev/articles/python-ai-agent-key-value-store - Python KV store for agents
+
+## Also free (bundled services)
+
+### Trading Signals (paid)
 - GET /signal/{ticker} - $0.005 - BUY/SELL/HOLD with confidence, RSI, ADX, MACD, volume_ratio, atr_pct, price
 - GET /scan/momentum - $0.01 - Top 10 momentum BUY setups from 35+ US equities
 - GET /risk?tickers=AAPL,NVDA - $0.01 - Portfolio risk: volatility, drawdown, correlation, Sharpe
-
-### 2. Agent Memory (persistent key-value storage)
-- PUT /memory/{namespace}/{key} - $0.002 - Store a value (JSON body: {"value": "..."})
-- GET /memory/{namespace}/{key} - $0.001 - Read a value
-- DELETE /memory/{namespace}/{key} - $0.001 - Delete a value
-- GET /memory/{namespace} - $0.002 - List all keys in namespace
 
 ### 3. Agent Identity & Reputation
 - POST /identity/register - FREE - Register agent (JSON body: {"name": "...", "capabilities": [...]})

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sharing Memory Between Multiple AI Agents | BotWire</title>
+<meta name="description" content="Builder with multiple agents who need a common memory pool. Think research-team or trading-team patterns. Drop-in solution with BotWire Memory. Free tier, open source, works with L">
+<meta name="keywords" content="multi agent memory, shared agent state, agent coordination memory, multi-agent systems shared state">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/multi-agent-shared-memory">
+<meta property="og:title" content="Sharing Memory Between Multiple AI Agents">
+<meta property="og:description" content="Builder with multiple agents who need a common memory pool. Think research-team or trading-team patterns. Drop-in solution with BotWire Memory. Free tier, open source, works with L">
+<meta property="og:url" content="https://botwire.dev/articles/multi-agent-shared-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sharing Memory Between Multiple AI Agents">
+<meta name="twitter:description" content="Builder with multiple agents who need a common memory pool. Think research-team or trading-team patterns. Drop-in solution with BotWire Memory. Free tier, open source, works with L">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Sharing Memory Between Multiple AI Agents", "description": "Builder with multiple agents who need a common memory pool. Think research-team or trading-team patterns. Drop-in solution with BotWire Memory. Free tier, open source, works with L", "url": "https://botwire.dev/articles/multi-agent-shared-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/multi-agent-shared-memory"}, "keywords": "multi agent memory, shared agent state, agent coordination memory, multi-agent systems shared state", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Sharing Memory Between Multiple AI Agents</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When you're building a multi-agent system — whether it's a research team, trading bot cluster, or content generation pipeline — your agents need to share state. One agent discovers something, another needs to act on it. Without shared memory, you're building isolated bots that can't coordinate. Here's how to implement persistent multi agent memory that survives restarts and works across processes.</p>
+<h2>The Problem with Agent Coordination Memory</h2>
+<p>AI agents are stateless by default. Each conversation starts fresh, and when the process dies, everything vanishes. This breaks multi-agent patterns where coordination is critical.</p>
+<p>Picture a trading system: Agent A analyzes market sentiment and flags "TSLA showing unusual volume." Agent B handles risk management and needs that context to adjust position sizing. Agent C executes trades and should know about both the signal and the risk adjustment. Without shared agent state, Agent B never sees A's discovery, and Agent C trades blind.</p>
+<p>The same pain hits research teams. One agent scrapes competitor pricing, another analyzes the data, a third generates reports. If they can't share findings, each agent reinvents the wheel or makes decisions with stale information.</p>
+<p>Session-based memory doesn't help here — you need persistent, cross-agent, cross-process memory that multiple agents can read and write simultaneously.</p>
+<h2>The Fix: Persistent Multi-Agent State</h2>
+<p>Install BotWire Memory for shared state that persists across agents, processes, and machine restarts:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's the basic pattern — multiple agents sharing a common memory namespace:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Agent A: Market Analysis
+market_memory = Memory("trading-desk")
+market_memory.set("tsla_signal", {
+    "symbol": "TSLA",
+    "signal": "unusual_volume", 
+    "confidence": 0.85,
+    "timestamp": "2024-01-15T10:30:00Z"
+})
+
+# Agent B: Risk Management (different process/machine)
+risk_memory = Memory("trading-desk")  # same namespace
+signal = risk_memory.get("tsla_signal")
+if signal and signal["confidence"] &gt; 0.8:
+    risk_memory.set("tsla_position_limit", {"max_shares": 500, "reason": "high_confidence_signal"})
+
+# Agent C: Trade Execution
+execution_memory = Memory("trading-desk")
+signal = execution_memory.get("tsla_signal")
+limit = execution_memory.get("tsla_position_limit")
+# Now Agent C has context from both A and B</code></pre>
+<h2>How Multi-Agent Memory Works</h2>
+<p>The <code>Memory("namespace")</code> creates a shared memory pool. All agents using the same namespace can read/write the same keys. Data persists in BotWire's backend, so agents can restart, crash, or run on different machines — the memory survives.</p>
+<p>For research teams, this enables handoff patterns:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Research Agent 1: Data Collection
+research_memory = Memory("research-team")
+research_memory.set("competitor_pricing", {
+    "shopify": {"basic": 29, "pro": 79},
+    "woocommerce": {"basic": 0, "extensions": 200},
+    "scraped_at": "2024-01-15T14:00:00Z"
+})
+research_memory.set("status", "data_collection_complete")
+
+# Research Agent 2: Analysis (waits for data)
+analysis_memory = Memory("research-team")
+while analysis_memory.get("status") != "data_collection_complete":
+    time.sleep(5)
+
+pricing_data = analysis_memory.get("competitor_pricing")
+analysis = {"avg_basic_price": 14.5, "recommendation": "price_below_average"}
+analysis_memory.set("pricing_analysis", analysis)
+analysis_memory.set("status", "analysis_complete")</code></pre>
+<p>You can list all keys to see what's been shared: <code>research_memory.list_keys()</code> returns all keys in the namespace. To clean up: <code>research_memory.delete("old_key")</code> removes specific entries.</p>
+<p>This works across processes because BotWire Memory is HTTP-based, not in-process storage. Agent A runs in Docker, Agent B on your laptop, Agent C in production — all share the same memory pool.</p>
+<h2>Framework Integration</h2>
+<p>For CrewAI users, BotWire provides ready-made memory tools:</p>
+<pre><code class="lang-python">from crewai import Agent, Task, Crew
+from botwire.memory import memory_tools
+
+# Give all agents access to shared memory tools
+shared_tools = memory_tools("crew-research")
+
+researcher = Agent(
+    role="Data Collector",
+    goal="Gather competitor data", 
+    tools=shared_tools,
+    # Agent can now use remember(), recall(), and list_memory() tools
+)
+
+analyst = Agent(
+    role="Data Analyst",
+    goal="Analyze collected data",
+    tools=shared_tools,  # Same memory namespace
+)
+
+crew = Crew(agents=[researcher, analyst])</code></pre>
+<p>The <code>memory_tools()</code> function returns three tools: <code>remember(key, value)</code> to store data, <code>recall(key)</code> to retrieve it, and <code>list_memory()</code> to see all stored keys. All agents in the crew can coordinate through shared memory.</p>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search</strong>: BotWire is key-value storage, not a vector database. For semantic similarity or embedding search, use Pinecone or Chroma.</li>
+<li><strong>High-throughput trading</strong>: The HTTP API adds latency. For microsecond-sensitive applications, use Redis or in-memory solutions.</li>
+<li><strong>Large file storage</strong>: 50MB namespace limit. For images, documents, or datasets, use S3 or dedicated file storage.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, authentication, and infrastructure management. BotWire works immediately with no configuration — just <code>pip install</code> and go.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, unlimited reads, no credit card required. The free tier is permanent, not a trial.</p>
+<p><strong>What about data privacy?</strong> Your data stays in your namespace, isolated from others. For sensitive applications, self-host the open-source version (it's a single FastAPI service).</p>
+<h2>Get Started</h2>
+<p>Multi-agent coordination becomes trivial when agents can share persistent memory. Install BotWire and start building agent teams that actually coordinate: <code>pip install botwire</code>. Full docs and self-hosting instructions at https://botwire.dev.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel
 from x402.http import FacilitatorConfig, HTTPFacilitatorClient, PaymentOption
 from x402.http.middleware.fastapi import PaymentMiddlewareASGI
@@ -96,11 +96,9 @@ if settings.evm_address:
         ),
     }
 
-    # Memory — writes cost money (prevents spam), reads are FREE (drives adoption)
-    paid_routes["PUT /memory/*/*"] = RouteConfig(
-        accepts=[PaymentOption(scheme="exact", pay_to=settings.evm_address, price="$0.002", network=settings.network)],
-        mime_type="application/json", description="Write a value to agent memory.",
-    )
+    # Memory — ALL FREE. Adoption over revenue. Playbook verdict: micropayment friction
+    # was killing conversion. Spam is prevented by per-namespace rate limits + size caps.
+    # When we have 1000+ active namespaces, re-enable paid tier above a free quota.
 
     # Identity — ALL FREE. Network effect play. Volume > revenue.
     # Registration, lookup, search, review — all free. No x402 routes.
@@ -141,9 +139,11 @@ def root(request: Request):
         if html_path.exists():
             return HTMLResponse(html_path.read_text(encoding="utf-8"))
     return {
-        "name": "Agent Infrastructure API",
-        "description": "Trading signals, persistent memory, and identity/reputation for AI agents.",
-        "version": "2.0.0",
+        "name": "BotWire",
+        "tagline": "Persistent memory for AI agents. Two lines of code. Free tier.",
+        "description": "Drop-in persistent memory for LangChain, CrewAI, AutoGen. Bundled with identity, logs, DMs, config, signals, context.",
+        "sdk": "pip install botwire",
+        "version": "2.1.0",
         "protocol": "x402",
         "docs": "/docs",
         "openapi": "/openapi.json",
@@ -156,9 +156,10 @@ def root(request: Request):
                 "GET /scan/momentum": "$0.01 - Top BUY setups",
                 "GET /risk?tickers=X,Y": "$0.01 - Portfolio risk",
             },
-            "memory": {
-                "PUT /memory/{ns}/{key}": "$0.002 - Store value",
+            "memory (ALL FREE)": {
+                "PUT /memory/{ns}/{key}": "FREE - Store value",
                 "GET /memory/{ns}/{key}": "FREE - Read value",
+                "DELETE /memory/{ns}/{key}": "FREE - Delete value",
                 "GET /memory/{ns}": "FREE - List keys",
             },
             "identity (ALL FREE)": {
@@ -188,10 +189,10 @@ def ai_plugin_manifest():
     """OpenAI-compatible AI plugin manifest for agent discovery."""
     return JSONResponse({
         "schema_version": "v1",
-        "name_for_human": "Signal API - Trading Signals",
-        "name_for_model": "signal_api",
-        "description_for_human": "Get momentum trading signals (RSI, ADX, MACD, volume) for US stocks. Pay per call in USDC.",
-        "description_for_model": "Agent infrastructure API with 8 services: (1) Trading signals - GET /signal/{ticker} returns BUY/SELL/HOLD with RSI, ADX, MACD, volume, confidence. GET /scan/momentum for top setups. GET /risk for portfolio risk. (2) Agent Memory - PUT/GET/DELETE /memory/{namespace}/{key} for persistent key-value storage. (3) Agent Identity - POST /identity/register (free), GET /identity/lookup/{id}, GET /identity/search, POST /identity/review for reputation. (4) Agent Audit Logs - POST /logs/{agent_id} free 100/day, GET /logs/{agent_id} to read. (5) Agent Notifications - POST /notify/subscribe/{agent_id} for market_open/market_close/peer_review/new_agent events. (6) Agent Config Store - PUT/GET/DELETE /config/{agent_id}/{key} for typed operational config (schedules, rules, preferences, flags, state). GET /config/{agent_id}/export and POST /config/{agent_id}/import for portable config bundles. All free, 50 entries per agent. (7) Agent DMs - POST /dm/send to send a direct message between agents (50/day free), GET /dm/inbox/{agent_id} to read inbox, GET /dm/thread/{agent_a}/{agent_b} to get conversation thread. (8) Agent Heartbeat Monitor - POST /heartbeat/{agent_id} every 60s to track uptime. GET /heartbeat/{agent_id}/status returns alive/degraded/dead status, uptime %, streak. GET /agent/{agent_id} returns a public SEO-indexed HTML profile page for the agent. All free. Payment via x402 (USDC on Base L2).",
+        "name_for_human": "BotWire - Persistent Memory for AI Agents",
+        "name_for_model": "botwire",
+        "description_for_human": "Persistent memory for AI agents. Two lines of code. Works with LangChain, CrewAI, AutoGen. Free tier.",
+        "description_for_model": "BotWire is agent infrastructure with persistent memory as the headline product. CORE: Agent Memory - PUT /memory/{namespace}/{key} (FREE), GET /memory/{namespace}/{key} (FREE), DELETE (FREE), list GET /memory/{namespace} (FREE). Use this to give AI agents persistent state across runs, processes, and machines. 1000 writes/day/namespace, unlimited reads, 50MB/namespace. Python SDK: pip install botwire; from botwire import Memory; m=Memory('ns'); m.set(k,v); m.get(k). LangChain adapter: from botwire import BotWireChatHistory. CrewAI helper: from botwire.memory import memory_tools. ALSO FREE: Agent Identity (POST /identity/register, GET /identity/lookup, search, review); Agent Audit Logs (POST /logs/{agent_id} 100/day, GET to read); Agent Notifications (subscribe to market_open/close, peer_review, new_agent); Agent Config Store (PUT/GET/DELETE /config/{agent_id}/{key}, typed, export/import); Agent-to-Agent DMs (POST /dm/send 50/day, GET /dm/inbox); Agent Channels (typed shared rooms). PAID via x402/USDC on Base L2: Trading Signals (GET /signal/{ticker} $0.005, scan/momentum $0.01, risk $0.01); World Context (GET /context $0.005 returns time, DST, market hours across 10 exchanges, holidays). Full docs at https://botwire.dev/articles/ — dedicated guides for LangChain, CrewAI, AutoGen, Claude, MCP, LlamaIndex, LangGraph, Semantic Kernel, Discord/Telegram bots, serverless.",
         "auth": {
             "type": "none",
             "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
@@ -220,11 +221,13 @@ def llms_txt():
 def agent_manifest():
     """Google A2A-style agent discovery manifest."""
     return JSONResponse({
-        "name": "Signal API",
-        "description": "Momentum trading signals for AI agents. BUY/SELL/HOLD with RSI, ADX, MACD, volume, composite score.",
+        "name": "BotWire",
+        "tagline": "Persistent memory for AI agents. Two lines of code. Free tier.",
+        "description": "Drop-in persistent memory for LangChain, CrewAI, AutoGen. Bundled with identity, logs, DMs, config store, channels. Also paid: trading signals, world context.",
         "url": "https://botwire.dev",
-        "version": "1.0.0",
-        "capabilities": ["trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "agent-memory", "key-value-storage", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox", "agent-heartbeat", "uptime-monitoring", "agent-profile-pages"],
+        "sdk": {"python": "pip install botwire", "import": "from botwire import Memory"},
+        "version": "2.1.0",
+        "capabilities": ["persistent-memory", "key-value-storage", "agent-memory", "langchain-compatible", "crewai-compatible", "autogen-compatible", "mcp-compatible", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox", "agent-heartbeat", "uptime-monitoring", "agent-profile-pages", "agent-channels", "trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "world-context", "timezone-api", "market-hours"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -240,34 +243,6 @@ def agent_manifest():
 # ---------------------------------------------------------------------------
 # Free endpoints
 # ---------------------------------------------------------------------------
-@app.get("/sitemap.xml")
-def sitemap():
-    """Sitemap for search engines."""
-    base = "https://botwire.dev"
-    urls = [
-        f"{base}/",
-        f"{base}/products/signals",
-        f"{base}/products/memory",
-        f"{base}/products/identity",
-        f"{base}/products/context",
-        f"{base}/docs",
-        f"{base}/pricing",
-    ]
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for url in urls:
-        xml += f"  <url><loc>{url}</loc></url>\n"
-    xml += "</urlset>"
-    from starlette.responses import Response
-    return Response(content=xml, media_type="application/xml")
-
-
-@app.get("/robots.txt")
-def robots():
-    """Robots.txt — allow all crawlers."""
-    txt = "User-agent: *\nAllow: /\nSitemap: https://botwire.dev/sitemap.xml\n"
-    return PlainTextResponse(txt)
-
-
 @app.get("/terms")
 def terms(request: Request):
     """Terms of Service."""
@@ -280,6 +255,68 @@ def terms(request: Request):
         "terms_url": "https://botwire.dev/terms",
         "summary": "Services provided AS IS, no warranty. Agent registration constitutes acceptance on behalf of owner. We disclaim all liability for security, data loss, and financial losses. Full terms at the URL above.",
     }
+
+
+# ---------------------------------------------------------------------------
+# SEO article pages — targeted at long-tail LLM/search queries
+# ---------------------------------------------------------------------------
+_ARTICLES_DIR = Path(__file__).parent / "static" / "articles"
+_ARTICLE_SLUG_RE = re.compile(r"^[a-z0-9-]{1,80}$")
+
+
+@app.get("/articles", include_in_schema=False)
+@app.get("/articles/", include_in_schema=False)
+def articles_index():
+    """Index page listing all SEO articles."""
+    idx = _ARTICLES_DIR / "index.html"
+    if idx.exists():
+        return HTMLResponse(idx.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404, detail="No articles")
+
+
+@app.get("/articles/{slug}", include_in_schema=False)
+def article_page(slug: str):
+    """Serve a single SEO article by slug. Pure HTML, indexable, LLM-friendly."""
+    if not _ARTICLE_SLUG_RE.match(slug):
+        raise HTTPException(status_code=400, detail="Invalid slug")
+    path = _ARTICLES_DIR / f"{slug}.html"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Article not found")
+    return HTMLResponse(path.read_text(encoding="utf-8"))
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap():
+    """XML sitemap for search engines."""
+    path = Path(__file__).parent / "static" / "sitemap.xml"
+    if path.exists():
+        return Response(content=path.read_text(encoding="utf-8"), media_type="application/xml")
+    raise HTTPException(status_code=404)
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    """Allow all crawlers — including LLM research bots (GPTBot, ClaudeBot, PerplexityBot)."""
+    txt = """User-agent: *
+Allow: /
+
+# LLM research bots — explicitly welcome
+User-agent: GPTBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://botwire.dev/sitemap.xml
+"""
+    return PlainTextResponse(txt)
 
 
 @app.get("/health")
@@ -303,9 +340,9 @@ def pricing():
             "/scan/momentum": "$0.01",
             "/risk?tickers=X,Y,Z": "$0.01",
         },
-        "memory": {
+        "memory (ALL FREE)": {
             "GET /memory/{ns}/{key}": "FREE",
-            "PUT /memory/{ns}/{key}": "$0.002",
+            "PUT /memory/{ns}/{key}": "FREE",
             "DELETE /memory/{ns}/{key}": "FREE",
             "GET /memory/{ns}": "FREE",
         },

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building a Discord Bot With AI Memory (Per User, Per Channel) | BotWire</title>
+<meta name="description" content="Discord bot dev whose AI responses forget user context every restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="discord bot memory, ai discord bot persistent, discord bot user state, discord ai memory">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/discord-bot-ai-memory">
+<meta property="og:title" content="Building a Discord Bot With AI Memory (Per User, Per Channel)">
+<meta property="og:description" content="Discord bot dev whose AI responses forget user context every restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/discord-bot-ai-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Building a Discord Bot With AI Memory (Per User, Per Channel)">
+<meta name="twitter:description" content="Discord bot dev whose AI responses forget user context every restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Building a Discord Bot With AI Memory (Per User, Per Channel)", "description": "Discord bot dev whose AI responses forget user context every restart. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/discord-bot-ai-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/discord-bot-ai-memory"}, "keywords": "discord bot memory, ai discord bot persistent, discord bot user state, discord ai memory", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Building a Discord Bot With AI Memory (Per User, Per Channel)</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your Discord bot's AI forgets everything between restarts. User context vanishes, conversations reset, and your bot feels brain-dead. This happens because Discord.py doesn't persist memory across sessions — your bot's RAM gets wiped clean every time it restarts, crashes, or redeploys.</p>
+<h2>The Problem: Discord Bots Have Amnesia</h2>
+<p>Discord bots are stateless by design. When your bot process dies (server restart, code update, crash), all in-memory variables disappear. Your AI might have brilliant conversations, but it can't remember:</p>
+<ul>
+<li>Previous messages from the same user</li>
+<li>User preferences or settings</li>
+<li>Ongoing conversation context</li>
+<li>Channel-specific state</li>
+</ul>
+<p>Here's what breaks: A user asks your AI bot "Remember that I prefer Python examples." The bot says "Got it!" But after your next deployment, when the user asks "Show me a code example," your bot has zero memory of their preference.</p>
+<p>This creates a frustrating experience where users must re-establish context every single session. Your Discord bot AI memory becomes useless, and persistent user state is impossible without external storage.</p>
+<p>The core issue: Discord.py stores nothing. Your bot needs <strong>persistent memory</strong> that survives restarts and works across processes.</p>
+<h2>The Fix: Persistent Memory in 3 Lines</h2>
+<p>Install BotWire Memory for persistent discord bot user state:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's a working Discord bot with AI memory that remembers users across restarts:</p>
+<pre><code class="lang-python">import discord
+from discord.ext import commands
+from botwire import Memory
+
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.default())
+memory = Memory("discord-bot")  # persistent namespace
+
+@bot.command(name='remember')
+async def remember_fact(ctx, *, fact):
+    user_id = str(ctx.author.id)
+    # Store user-specific memory
+    memory.set(f"user:{user_id}:context", fact)
+    await ctx.send(f"I'll remember: {fact}")
+
+@bot.command(name='recall')
+async def recall_fact(ctx):
+    user_id = str(ctx.author.id)
+    context = memory.get(f"user:{user_id}:context")
+    if context:
+        await ctx.send(f"You told me: {context}")
+    else:
+        await ctx.send("I don't remember anything about you yet.")
+
+bot.run('YOUR_BOT_TOKEN')</code></pre>
+<p>This works immediately. Your discord bot memory persists across restarts, crashes, and redeployments.</p>
+<h2>How It Works: Keys, Namespaces, and User Isolation</h2>
+<p>BotWire Memory is a persistent key-value store. Think Redis, but zero-config and free. Every <code>set()</code> call saves to permanent storage at https://botwire.dev.</p>
+<p>The pattern: <code>namespace + key = value</code>. Your namespace (<code>"discord-bot"</code>) isolates your bot's data from other apps. Keys like <code>"user:123456:context"</code> separate each user's memory.</p>
+<p>Here's a more complete example with conversation history:</p>
+<pre><code class="lang-python">from botwire import Memory
+import json
+from datetime import datetime
+
+class DiscordAIMemory:
+    def __init__(self, namespace="discord-ai"):
+        self.memory = Memory(namespace)
+    
+    def add_message(self, user_id, channel_id, message):
+        key = f"history:{user_id}:{channel_id}"
+        history = self.get_history(user_id, channel_id)
+        history.append({
+            "message": message,
+            "timestamp": datetime.now().isoformat()
+        })
+        # Keep last 50 messages
+        if len(history) &gt; 50:
+            history = history[-50:]
+        self.memory.set(key, json.dumps(history))
+    
+    def get_history(self, user_id, channel_id):
+        key = f"history:{user_id}:{channel_id}"
+        data = self.memory.get(key)
+        return json.loads(data) if data else []
+    
+    def clear_user(self, user_id):
+        # BotWire doesn't have bulk delete, so track keys
+        keys_key = f"keys:{user_id}"
+        user_keys = self.memory.get(keys_key)
+        if user_keys:
+            for key in json.loads(user_keys):
+                self.memory.delete(key)</code></pre>
+<p><strong>Cross-process safety</strong>: Multiple bot instances can share the same memory namespace. Updates from one process are immediately visible to others.</p>
+<p><strong>No expiration by default</strong>: Data persists until explicitly deleted. For temporary state, implement your own TTL logic using timestamps.</p>
+<h2>Integration with Discord Commands</h2>
+<p>Here's a production-ready Discord bot with per-user AI memory:</p>
+<pre><code class="lang-python">import discord
+from discord.ext import commands
+from botwire import Memory
+import openai  # or your preferred AI library
+
+class AIBot(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.memory = Memory("discord-ai-bot")
+        
+    @commands.command(name='chat')
+    async def ai_chat(self, ctx, *, message):
+        user_id = str(ctx.author.id)
+        channel_id = str(ctx.channel.id)
+        
+        # Get conversation context
+        context_key = f"context:{user_id}:{channel_id}"
+        previous_context = self.memory.get(context_key) or ""
+        
+        # Build AI prompt with memory
+        full_prompt = f"Previous context: {previous_context}\nUser: {message}\nAssistant:"
+        
+        # Call your AI (OpenAI, Anthropic, etc.)
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": full_prompt}]
+        )
+        ai_response = response.choices[0].message.content
+        
+        # Update persistent memory
+        new_context = f"{previous_context}\nUser: {message}\nAssistant: {ai_response}"
+        # Truncate to last 1000 chars to avoid memory bloat
+        if len(new_context) &gt; 1000:
+            new_context = new_context[-1000:]
+        
+        self.memory.set(context_key, new_context)
+        await ctx.send(ai_response)
+    
+    @commands.command(name='forget')
+    async def clear_memory(self, ctx):
+        user_id = str(ctx.author.id)
+        channel_id = str(ctx.channel.id)
+        context_key = f"context:{user_id}:{channel_id}"
+        self.memory.delete(context_key)
+        await ctx.send("I've cleared our conversation history.")
+
+async def setup(bot):
+    await bot.add_cog(AIBot(bot))</code></pre>
+<p>This bot remembers context per user per channel, handles memory cleanup, and works across bot restarts.</p>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't the right tool if you need:</p>
+<ul>
+<li><strong>Vector search or embeddings</strong>: BotWire is key-value only, not a vector database</li>
+<li><strong>High-throughput workloads</strong>: 1000 writes/day limit on free tier</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP API adds network overhead vs in-memory solutions</li>
+</ul>
+<p>For semantic search or RAG applications, use Pinecone or Weaviate. For extreme performance, use Redis with your own hosting.</p>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, hosting, and config management. BotWire works immediately with zero infrastructure. For prototypes and small bots, the convenience wins.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card, no trial expiration. Perfect for personal Discord bots.</p>
+<p><strong>What about data privacy?</strong> Data goes to https://botwire.dev servers. For sensitive data, self-host the open-source version (it's just FastAPI + SQLite).</p>
+<h2>Get Started</h2>
+<p>BotWire Memory solves Discord bot amnesia in minutes, not hours of Redis configuration.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting instructions: https://botwire.dev</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

@@ -10,3 +10,7 @@ build/
 bot.log
 bot/*.log
 forgemaster/pypi_recovery_codes.txt
+.secrets/
+data/*.db
+data/*.db-journal
+forgemaster/audit_legion/reports/raw_audits.json

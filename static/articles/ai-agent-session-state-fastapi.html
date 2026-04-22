@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Managing AI Agent Session State in FastAPI | BotWire</title>
+<meta name="description" content="Backend dev shipping an AI agent via FastAPI who needs per-user session state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="fastapi agent state, fastapi session store ai, fastapi llm memory, agent session fastapi">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/ai-agent-session-state-fastapi">
+<meta property="og:title" content="Managing AI Agent Session State in FastAPI">
+<meta property="og:description" content="Backend dev shipping an AI agent via FastAPI who needs per-user session state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/ai-agent-session-state-fastapi">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Managing AI Agent Session State in FastAPI">
+<meta name="twitter:description" content="Backend dev shipping an AI agent via FastAPI who needs per-user session state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Managing AI Agent Session State in FastAPI", "description": "Backend dev shipping an AI agent via FastAPI who needs per-user session state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/ai-agent-session-state-fastapi", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/ai-agent-session-state-fastapi"}, "keywords": "fastapi agent state, fastapi session store ai, fastapi llm memory, agent session fastapi", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Managing AI Agent Session State in FastAPI</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When building AI agents in FastAPI, your biggest headache isn't the AI logic—it's keeping track of what each user said three messages ago. Session state disappears between requests, conversations reset on server restarts, and scaling horizontally means losing context entirely. You need persistent memory that survives everything.</p>
+<h2>The Problem with Stateless FastAPI Agents</h2>
+<p>FastAPI is stateless by design. Every request starts fresh with no memory of previous interactions. For simple APIs, this is perfect. For AI agents that need conversation context, it's a nightmare.</p>
+<p>Here's what breaks:</p>
+<pre><code class="lang-python"># This doesn't work - conversation context is lost
+@app.post("/chat")
+async def chat(message: str):
+    # Where's the conversation history?
+    response = llm.generate(message)  # No context!
+    return {"response": response}</code></pre>
+<p>Your agent can't remember user preferences, previous questions, or maintain context across a multi-turn conversation. Store state in memory variables? Gone on restart. Use global dictionaries? Doesn't scale across multiple processes. Session cookies help with user identification but don't solve persistence.</p>
+<p>The result: users get frustrated repeating themselves, agents give inconsistent answers, and your "intelligent" assistant feels pretty dumb.</p>
+<h2>The Fix: Persistent Agent Memory</h2>
+<p>Install BotWire Memory to add persistent key-value storage to any FastAPI agent:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from fastapi import FastAPI
+from botwire import Memory
+
+app = FastAPI()
+
+@app.post("/chat")
+async def chat(user_id: str, message: str):
+    # Each user gets isolated memory
+    memory = Memory(f"agent-{user_id}")
+    
+    # Get conversation history
+    history = memory.get("conversation") or []
+    history.append({"role": "user", "content": message})
+    
+    # Generate response with context
+    response = your_llm_call(history)
+    history.append({"role": "assistant", "content": response})
+    
+    # Persist the updated conversation
+    memory.set("conversation", history)
+    
+    return {"response": response}</code></pre>
+<p>That's it. Your agent now remembers conversations across requests, server restarts, and deployments.</p>
+<h2>How It Works</h2>
+<p>BotWire creates isolated memory namespaces per user. The <code>Memory("agent-{user_id}")</code> call gives each user their own persistent key-value store that survives everything.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# User-specific memory spaces
+alice_memory = Memory("agent-alice")
+bob_memory = Memory("agent-bob")
+
+# Store any JSON-serializable data
+alice_memory.set("preferences", {"language": "spanish", "tone": "formal"})
+alice_memory.set("context", "discussing quarterly sales")
+
+# Retrieve across requests/restarts
+prefs = alice_memory.get("preferences")  # {"language": "spanish", "tone": "formal"}
+context = alice_memory.get("context")    # "discussing quarterly sales"</code></pre>
+<p>Memory operations are synchronous and fast. Data persists automatically—no explicit saves needed. Each namespace is isolated, so Alice never sees Bob's data.</p>
+<p>For managing state lifecycle:</p>
+<pre><code class="lang-python">memory = Memory("agent-user123")
+
+# List all keys in this user's memory
+keys = memory.keys()  # ["conversation", "preferences", "context"]
+
+# Remove specific data
+memory.delete("old_context")
+
+# Clear everything for this user
+for key in memory.keys():
+    memory.delete(key)</code></pre>
+<p>The memory survives process crashes, deployments, and horizontal scaling. Multiple FastAPI instances can share the same user state seamlessly.</p>
+<h2>LangChain Integration</h2>
+<p>If you're using LangChain, BotWire provides a drop-in chat history store:</p>
+<pre><code class="lang-python">from fastapi import FastAPI
+from botwire import BotWireChatHistory
+from langchain.chains import ConversationChain
+from langchain.llms import OpenAI
+
+app = FastAPI()
+
+@app.post("/chat")
+async def chat(user_id: str, message: str):
+    # Persistent chat history for this user
+    history = BotWireChatHistory(session_id=f"user-{user_id}")
+    
+    # LangChain conversation with memory
+    conversation = ConversationChain(
+        llm=OpenAI(),
+        memory=ConversationBufferMemory(chat_memory=history)
+    )
+    
+    response = conversation.predict(input=message)
+    return {"response": response}</code></pre>
+<p>The chat history persists automatically. Users can leave and return days later to continue exactly where they left off.</p>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search or embeddings</strong>: BotWire is key-value storage, not a vector database. Use Pinecone or Weaviate for semantic search.</li>
+<li><strong>High-throughput applications</strong>: The free tier caps at 1000 writes/day per namespace. Fine for user conversations, not for logging every API call.</li>
+<li><strong>Sub-millisecond latency requirements</strong>: BotWire adds ~10-50ms per call. Great for chat agents, not for real-time gaming.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, authentication, and infrastructure management. BotWire works immediately with zero configuration. For production apps with existing Redis, stick with Redis.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, 50MB storage per namespace, unlimited reads. No API keys, no credit cards, no surprises.</p>
+<p><strong>What about data privacy?</strong> Data is stored on BotWire's servers. For sensitive applications, self-host the open-source version—it's a single FastAPI service with SQLite.</p>
+<p>---</p>
+<p>Stop losing conversation context on every restart. Install BotWire Memory and give your FastAPI agents the persistent memory they need: <code>pip install botwire</code>. Get started at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

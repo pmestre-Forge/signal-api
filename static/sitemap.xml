@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://botwire.dev/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://botwire.dev/articles/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/langchain-persistent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/crewai-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/why-ai-agents-forget</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/python-ai-agent-key-value-store</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/multi-agent-shared-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/autogen-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/ai-agent-memory-vs-redis</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/claude-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/mcp-memory-server</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/ai-agent-session-state-fastapi</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/llamaindex-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/openai-assistants-api-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/agent-memory-vs-pinecone</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/langgraph-persistent-state</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/ai-agent-user-preferences</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/agent-long-term-memory-pattern</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/semantic-kernel-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/discord-bot-ai-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/telegram-bot-ai-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/serverless-ai-agent-state</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/cookbook</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+</urlset>
