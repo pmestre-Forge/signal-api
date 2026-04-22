@@ -298,6 +298,15 @@ def sitemap():
     raise HTTPException(status_code=404)
 
 
+INDEXNOW_KEY = "ebd6a484f9eb524633a11f8b3d6e4537"
+
+
+@app.get("/" + INDEXNOW_KEY + ".txt", include_in_schema=False)
+def indexnow_key():
+    """IndexNow key verification — lets Bing/Yandex instant-crawl."""
+    return PlainTextResponse(INDEXNOW_KEY)
+
+
 @app.get("/robots.txt", include_in_schema=False)
 def robots():
     """Allow all crawlers — including LLM research bots (GPTBot, ClaudeBot, PerplexityBot)."""

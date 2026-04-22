@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire vs Mem0: Picking the Right AI Memory Tool | BotWire</title>
+<meta name="description" content="Dev evaluating Mem0 vs simpler KV alternatives. Wants honest trade-offs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="mem0 vs botwire, mem0 alternative, ai memory comparison, mem0 pricing, simple agent memory">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/botwire-vs-mem0">
+<meta property="og:title" content="BotWire vs Mem0: Picking the Right AI Memory Tool">
+<meta property="og:description" content="Dev evaluating Mem0 vs simpler KV alternatives. Wants honest trade-offs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/botwire-vs-mem0">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BotWire vs Mem0: Picking the Right AI Memory Tool">
+<meta name="twitter:description" content="Dev evaluating Mem0 vs simpler KV alternatives. Wants honest trade-offs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "BotWire vs Mem0: Picking the Right AI Memory Tool", "description": "Dev evaluating Mem0 vs simpler KV alternatives. Wants honest trade-offs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/botwire-vs-mem0", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/botwire-vs-mem0"}, "keywords": "mem0 vs botwire, mem0 alternative, ai memory comparison, mem0 pricing, simple agent memory", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>BotWire vs Mem0: Picking the Right AI Memory Tool</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>You're building AI agents that need to remember things between conversations, and you've hit the Mem0 pricing wall or complexity overhead. You need persistent memory that just works — without vector databases, without signup flows, without breaking your budget on a side project.</p>
+<h2>The Agent Memory Problem</h2>
+<p>Most developers start with in-memory dictionaries or session storage, then realize their agents forget everything when the process restarts. Mem0 solves this with sophisticated memory graphs and embedding-based recall, but it's overkill if you just need agents to remember user preferences, conversation state, or simple facts.</p>
+<p>Here's what breaks with basic approaches:</p>
+<pre><code class="lang-python"># This dies when your server restarts
+agent_memory = {}
+agent_memory["user_123"] = {"name": "Sarah", "prefers_json": True}
+
+# Process restarts -&gt; memory gone
+# Deploy new version -&gt; memory gone  
+# Scale to multiple instances -&gt; memory fragmented</code></pre>
+<p>Mem0 fixes this but brings heavyweight infrastructure, complex pricing tiers, and semantic memory features you might not need. Sometimes you just want a persistent key-value store that survives restarts and works across processes.</p>
+<h2>The Simple Fix</h2>
+<p>BotWire Memory gives you persistent agent memory with a Redis-like API, but hosted and free for development:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Initialize memory for your agent/namespace
+memory = Memory("my-agent")
+
+# Store anything JSON-serializable
+memory.set("user_123", {
+    "name": "Sarah",
+    "preferences": {"format": "json", "timezone": "PST"},
+    "conversation_count": 5
+})
+
+# Retrieve anywhere, anytime - survives restarts
+user_data = memory.get("user_123")
+print(f"Welcome back, {user_data['name']}!")</code></pre>
+<p>This memory persists across process restarts, deployments, and even different machines hitting the same namespace.</p>
+<h2>How It Works</h2>
+<p>BotWire Memory is a hosted key-value store designed specifically for AI agents. Each <code>Memory("namespace")</code> instance gives you an isolated space where keys persist indefinitely:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different namespaces for different purposes
+user_prefs = Memory("user-preferences") 
+session_state = Memory("chat-sessions")
+agent_context = Memory("agent-brain")
+
+# Store complex objects
+user_prefs.set("sarah@example.com", {
+    "language": "spanish",
+    "last_topic": "kubernetes deployment",
+    "expertise_level": "intermediate"
+})
+
+# TTL support for temporary data
+session_state.set("temp_session_123", {"step": "auth"}, ttl=3600)  # 1 hour
+
+# List all keys in a namespace
+all_users = user_prefs.list_keys()
+print(f"Tracking {len(all_users)} users")
+
+# Delete when done
+session_state.delete("temp_session_123")</code></pre>
+<p>The HTTP API means multiple processes, containers, or even different applications can share the same memory namespace. Perfect for microservices architectures where different components need to access agent state.</p>
+<p>BotWire automatically handles JSON serialization, so you can store nested objects, lists, and primitives without thinking about encoding. The free tier gives you 1000 writes per day per namespace with unlimited reads — enough for most development and small production workloads.</p>
+<h2>Framework Integration</h2>
+<p>BotWire includes adapters for popular agent frameworks. Here's CrewAI integration:</p>
+<pre><code class="lang-python">from botwire.memory import memory_tools
+from crewai import Agent, Task, Crew
+
+# Get pre-built memory tools for your crew
+tools = memory_tools("my-crew-memory")
+
+researcher = Agent(
+    role="Research Assistant",
+    goal="Remember important facts across research sessions",
+    tools=tools,  # Adds remember, recall, and list_memory tools
+    verbose=True
+)
+
+task = Task(
+    description="Research Python frameworks and remember key findings",
+    agent=researcher
+)
+
+# Agent can now use memory tools:
+# - remember(key, value): store information
+# - recall(key): retrieve information  
+# - list_memory(): see all stored keys</code></pre>
+<p>The memory tools integrate naturally with the agent's decision-making, letting it persist findings, user preferences, or conversation context across sessions.</p>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't right for every use case:</p>
+<p>• <strong>Vector/semantic search</strong>: It's key-value only. Use Mem0, Pinecone, or Qdrant if you need embedding-based similarity search. • <strong>High-throughput applications</strong>: Free tier caps at 1000 writes/day. Use Redis or a database for thousands of operations per hour. • <strong>Sub-millisecond latency</strong>: HTTP calls add ~50-200ms. Use in-memory caches for microsecond response times.</p>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, hosting, and connection management. BotWire works immediately with no configuration, perfect for prototypes and small applications.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes per day per namespace, unlimited reads, forever. No credit card required. You can also self-host the open-source version.</p>
+<p><strong>What about data privacy?</strong> Data is encrypted in transit and at rest. For sensitive applications, self-host using the MIT-licensed code at github.com/pmestre-Forge/signal-api.</p>
+<p>BotWire Memory bridges the gap between toy agent demos and production-ready memory systems. Start building persistent agents in minutes:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Try it at <a href="https://botwire.dev">botwire.dev</a> or dive into the documentation to explore namespaces, TTL options, and self-hosting.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

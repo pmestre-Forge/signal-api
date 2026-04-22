@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire vs LangMem: When Simplicity Wins | BotWire</title>
+<meta name="description" content="LangChain user comparing their new LangMem to simpler external KV backends. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="langmem vs botwire, langmem alternative, langchain memory options, langmem comparison">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/botwire-vs-langmem">
+<meta property="og:title" content="BotWire vs LangMem: When Simplicity Wins">
+<meta property="og:description" content="LangChain user comparing their new LangMem to simpler external KV backends. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/botwire-vs-langmem">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BotWire vs LangMem: When Simplicity Wins">
+<meta name="twitter:description" content="LangChain user comparing their new LangMem to simpler external KV backends. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "BotWire vs LangMem: When Simplicity Wins", "description": "LangChain user comparing their new LangMem to simpler external KV backends. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/botwire-vs-langmem", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/botwire-vs-langmem"}, "keywords": "langmem vs botwire, langmem alternative, langchain memory options, langmem comparison", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>BotWire vs LangMem: When Simplicity Wins</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>LangChain Memory got complex fast. You're looking at <code>ConversationBufferMemory</code>, <code>ConversationSummaryMemory</code>, vectorstore-backed solutions, and wondering if there's something simpler. LangMem promises to solve this, but sometimes the simplest solution is just a persistent key-value store that works across processes and machines.</p>
+<h2>The LangChain Memory Problem</h2>
+<p>LangChain's memory system works great for single sessions, but breaks down when you need persistence across restarts or multiple processes. Your agent forgets everything when the process dies. ConversationBufferMemory lives in RAM. VectorStoreRetrieverMemory requires setting up Pinecone or Chroma for what should be simple key-value storage.</p>
+<pre><code class="lang-python"># This dies when your process restarts
+from langchain.memory import ConversationBufferMemory
+memory = ConversationBufferMemory()
+memory.chat_memory.add_user_message("Remember my name is Alice")
+# Process restarts... Alice is gone</code></pre>
+<p>LangMem tries to fix this with cloud persistence, but you're stuck with their API, pricing, and data handling. Sometimes you just need a simple alternative that persists data without the complexity.</p>
+<h2>The Simple Fix</h2>
+<p>Install BotWire and get persistent memory in three lines:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Persistent across restarts, processes, machines
+m = Memory("my-agent")
+m.set("user_name", "Alice")
+m.set("user_preferences", {"theme": "dark", "notifications": True})
+
+# Later, in a different process:
+name = m.get("user_name")  # "Alice"
+prefs = m.get("user_preferences")  # {"theme": "dark", "notifications": True}</code></pre>
+<p>That's it. No configuration, no API keys, no database setup. Your data persists at https://botwire.dev automatically.</p>
+<h2>How It Works</h2>
+<p>BotWire Memory is a simple HTTP-backed key-value store. Each <code>Memory("namespace")</code> creates an isolated storage space. Data persists across Python processes, server restarts, and different machines.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different namespaces = isolated data
+user_memory = Memory("user-42")
+system_memory = Memory("system-config")
+
+# Store any JSON-serializable data
+user_memory.set("conversation_history", [
+    {"role": "user", "message": "What's the weather?"},
+    {"role": "assistant", "message": "I'll check that for you."}
+])
+
+# List all keys in a namespace
+all_keys = user_memory.list()  # ["conversation_history"]
+
+# Check if key exists
+if user_memory.get("last_login"):
+    print("Welcome back!")
+
+# Delete when done
+user_memory.delete("temporary_data")</code></pre>
+<p>Cross-process persistence works immediately. Start a Python script, set some data, kill it, start another script - your data is still there. No Redis, no database, no configuration files.</p>
+<pre><code class="lang-python"># Process A
+m = Memory("shared-state")
+m.set("current_task", "processing_documents")
+
+# Process B (different machine, same namespace)
+task = Memory("shared-state").get("current_task")  # "processing_documents"</code></pre>
+<h2>LangChain Integration</h2>
+<p>BotWire provides a drop-in replacement for LangChain's chat memory:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.schema import HumanMessage, AIMessage
+
+# Persistent chat history
+history = BotWireChatHistory(session_id="user-42")
+
+# Add messages - they persist automatically
+history.add_user_message("Remember I'm working on a Python project")
+history.add_ai_message("Got it, I'll keep that context for our conversation")
+
+# Use with LangChain chains
+from langchain.memory import ConversationBufferMemory
+memory = ConversationBufferMemory(
+    chat_memory=history,
+    return_messages=True
+)
+
+# Your conversation survives restarts
+messages = history.messages  # Loads from persistent storage</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector/semantic search</strong>: BotWire is key-value only. Use Pinecone, Weaviate, or Chroma for embeddings and similarity search</li>
+<li><strong>High throughput</strong>: Free tier caps at 1000 writes/day per namespace. Redis or local databases handle millions of operations</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP calls add ~50-200ms. Use in-memory caches for microsecond response times</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis or a database?</strong> You can, but then you need hosting, connection strings, error handling, and serialization. BotWire works immediately with zero setup. For prototypes and small apps, the convenience wins.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, 50MB storage per namespace, unlimited reads. No credit card, no trial expiration. The service needs to stay free to be useful.</p>
+<p><strong>What about data privacy?</strong> Data flows through botwire.dev servers. For sensitive data, self-host the open source version (MIT license, single FastAPI service) or use a traditional database with proper encryption.</p>
+<p>---</p>
+<p>BotWire Memory gives you LangChain persistence without the complexity. Install it, set some keys, watch your data survive restarts.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Try it at https://botwire.dev.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

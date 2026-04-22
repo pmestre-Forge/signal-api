@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire vs Zep: Comparing AI Agent Memory Backends | BotWire</title>
+<meta name="description" content="Dev who tried Zep but finds it overkill for simple use cases. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="zep vs botwire, zep alternative, zep cloud alternative, ai agent memory backend, getzep comparison">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/botwire-vs-zep">
+<meta property="og:title" content="BotWire vs Zep: Comparing AI Agent Memory Backends">
+<meta property="og:description" content="Dev who tried Zep but finds it overkill for simple use cases. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/botwire-vs-zep">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BotWire vs Zep: Comparing AI Agent Memory Backends">
+<meta name="twitter:description" content="Dev who tried Zep but finds it overkill for simple use cases. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "BotWire vs Zep: Comparing AI Agent Memory Backends", "description": "Dev who tried Zep but finds it overkill for simple use cases. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/botwire-vs-zep", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/botwire-vs-zep"}, "keywords": "zep vs botwire, zep alternative, zep cloud alternative, ai agent memory backend, getzep comparison", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>BotWire vs Zep: Comparing AI Agent Memory Backends</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>If you're evaluating Zep alternatives for AI agent memory, you've probably hit the same wall: Zep feels like overkill when you just need persistent key-value storage that survives agent restarts. You don't need vector databases or semantic search—just reliable memory that works across processes and machines. BotWire Memory offers exactly that: a lightweight, zero-config alternative that gets out of your way.</p>
+<h2>The Zep Complexity Problem</h2>
+<p>Zep is powerful but complex. It assumes you need vector embeddings, semantic search, and elaborate session management. For many AI agents, this creates unnecessary overhead:</p>
+<pre><code class="lang-python"># Zep requires sessions, collections, vector stores
+from zep_python import ZepClient
+client = ZepClient(api_key="your-key")
+session = client.memory.add_session(session_id="user", user_id="123")
+# Then you need to manage vector embeddings, memory types...</code></pre>
+<p>The real pain hits when you just want simple persistence: "remember this user prefers JSON responses" or "store the last API endpoint we successfully called." Zep forces you into its session-based, vector-first mental model even for basic key-value needs.</p>
+<p>Your agent restarts, and simple state is gone. You end up writing custom persistence layers or wrestling with Zep's abstractions when a simple <code>set("user_preference", "json")</code> would suffice.</p>
+<h2>The BotWire Alternative</h2>
+<p>BotWire Memory strips away the complexity. Install it and start persisting data in three lines:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Create namespaced memory (no signup, no API keys)
+memory = Memory("my-agent")
+
+# Persist data that survives restarts
+memory.set("user_preference", "json")
+memory.set("last_successful_endpoint", "https://api.example.com/v2")
+
+# Retrieve anywhere, anytime
+preference = memory.get("user_preference")  # "json"</code></pre>
+<p>This works immediately. No configuration, no API keys, no vector setup. Your data persists across agent restarts, different machines, and process crashes.</p>
+<h2>How It Works</h2>
+<p>BotWire operates as a simple HTTP-backed key-value store with namespaces. Each <code>Memory("namespace")</code> creates an isolated space for your agent's data:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different agents, isolated memory
+user_prefs = Memory("user-preferences") 
+api_cache = Memory("api-responses")
+agent_state = Memory("agent-internal")
+
+# Store complex data (auto-serialized)
+user_prefs.set("user_42", {
+    "format": "json",
+    "timezone": "UTC",
+    "last_active": "2024-01-15"
+})
+
+# List all keys in a namespace
+all_users = user_prefs.list_keys()  # ["user_42", "user_43", ...]
+
+# Delete when needed
+user_prefs.delete("user_42")
+
+# Cross-process persistence - start a new Python session:
+new_memory = Memory("user-preferences")
+data = new_memory.get("user_43")  # Still there</code></pre>
+<p>The HTTP backend at <code>botwire.dev</code> handles persistence. Your data survives Python restarts, server reboots, and deployment cycles. No Redis setup, no database migrations, no session management complexity.</p>
+<p>Namespaces prevent conflicts: your "user_42" key won't collide with another agent's "user_42" in a different namespace.</p>
+<h2>Framework Integration</h2>
+<p>BotWire provides drop-in adapters for popular agent frameworks:</p>
+<pre><code class="lang-python"># LangChain integration
+from botwire import BotWireChatHistory
+from langchain.memory import ConversationBufferMemory
+
+# Persistent chat history across sessions
+chat_history = BotWireChatHistory(session_id="user-42")
+memory = ConversationBufferMemory(
+    chat_memory=chat_history,
+    return_messages=True
+)
+
+# CrewAI integration  
+from botwire.memory import memory_tools
+
+# Get remember/recall/list_memory tools for your crew
+crew_memory_tools = memory_tools("my-crew-namespace")
+# Returns: [RememberTool, RecallTool, ListMemoryTool]</code></pre>
+<p>These adapters handle the framework-specific interfaces while BotWire manages the actual persistence.</p>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire isn't right for every use case:</p>
+<p>• <strong>Vector/semantic search</strong>: Use Zep, Pinecone, or Weaviate if you need embedding-based similarity search • <strong>High-throughput scenarios</strong>: 1000 writes/day limit makes this unsuitable for production apps with heavy write loads • <strong>Sub-millisecond latency</strong>: HTTP API adds network overhead—use Redis for ultra-low latency requirements</p>
+<h2>FAQ</h2>
+<p><strong>Q: Why not just use Redis?</strong> A: Redis requires setup, hosting, and connection management. BotWire works immediately with zero config, perfect for prototyping and simple agents.</p>
+<p><strong>Q: Is this actually free?</strong> A: Yes. 1000 writes/day per namespace, 50MB storage, unlimited reads. No credit card, no trial limits.</p>
+<p><strong>Q: What about data privacy?</strong> A: BotWire is open source (MIT license) and self-hostable. Run your own instance with <code>git clone</code> and FastAPI if you need full control.</p>
+<h2>Get Started</h2>
+<p>BotWire Memory eliminates the complexity tax of traditional agent memory solutions. Install it now and start building agents that remember what matters.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting instructions at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

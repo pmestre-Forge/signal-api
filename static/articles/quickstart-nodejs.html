@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire Memory from Node.js (via fetch) | BotWire</title>
+<meta name="description" content="Node/TypeScript dev who wants to use BotWire before the official JS SDK ships. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="nodejs agent memory, typescript ai memory, fetch api botwire, node ai memory">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/quickstart-nodejs">
+<meta property="og:title" content="BotWire Memory from Node.js (via fetch)">
+<meta property="og:description" content="Node/TypeScript dev who wants to use BotWire before the official JS SDK ships. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/quickstart-nodejs">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BotWire Memory from Node.js (via fetch)">
+<meta name="twitter:description" content="Node/TypeScript dev who wants to use BotWire before the official JS SDK ships. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "BotWire Memory from Node.js (via fetch)", "description": "Node/TypeScript dev who wants to use BotWire before the official JS SDK ships. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/quickstart-nodejs", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/quickstart-nodejs"}, "keywords": "nodejs agent memory, typescript ai memory, fetch api botwire, node ai memory", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>BotWire Memory from Node.js (via fetch)</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your Node.js AI agent works perfectly until you restart it — then it forgets everything. You need <strong>persistent memory</strong> that survives process restarts, but building a proper storage layer feels like overkill for simple key-value data. Here's how to add persistent memory to your Node.js AI agent using BotWire's HTTP API via fetch.</p>
+<h2>The Problem: Agent Memory Dies with Process Restarts</h2>
+<p>Most Node.js AI agents store conversation history and context in variables or Maps. This works during development, but breaks in production when processes restart, containers redeploy, or your agent runs across multiple instances.</p>
+<pre><code class="lang-javascript">// This memory dies when the process restarts
+const agentMemory = new Map();
+agentMemory.set('user-123-context', 'User prefers technical responses');
+// After restart: Map is empty, context is lost</code></pre>
+<p>Your agent loses track of user preferences, conversation history, and accumulated knowledge. Users have to repeat themselves. Multi-turn conversations break. Your agent feels stupid and unreliable.</p>
+<h2>The Fix: HTTP API Calls to BotWire Memory</h2>
+<p>BotWire provides persistent key-value storage via HTTP API. No signups, no API keys, just fetch calls to <code>https://botwire.dev</code>.</p>
+<pre><code class="lang-bash"># Install Python SDK (for reference)
+pip install botwire</code></pre>
+<pre><code class="lang-javascript">// Node.js persistent agent memory via fetch
+class AgentMemory {
+  constructor(namespace) {
+    this.baseUrl = 'https://botwire.dev';
+    this.namespace = namespace;
+  }
+  
+  async set(key, value) {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value })
+    });
+    return response.ok;
+  }
+  
+  async get(key) {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.value;
+  }
+}
+
+// Usage
+const memory = new AgentMemory('my-agent-v1');
+await memory.set('user-123-context', 'Prefers code examples over theory');
+const context = await memory.get('user-123-context');
+console.log(context); // "Prefers code examples over theory"</code></pre>
+<h2>How It Works: Key-Value Storage with Namespaces</h2>
+<p>The <code>namespace</code> parameter isolates your agent's data from other agents. Think of it as a database name. Within a namespace, you store key-value pairs that persist across restarts.</p>
+<pre><code class="lang-javascript">class AgentMemory {
+  constructor(namespace) {
+    this.baseUrl = 'https://botwire.dev';
+    this.namespace = namespace;
+  }
+  
+  async set(key, value, ttlSeconds = null) {
+    const payload = { value };
+    if (ttlSeconds) payload.ttl = ttlSeconds;
+    
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return response.ok;
+  }
+  
+  async get(key) {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Memory fetch failed: ${response.status}`);
+    const data = await response.json();
+    return data.value;
+  }
+  
+  async delete(key) {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`, {
+      method: 'DELETE'
+    });
+    return response.ok;
+  }
+  
+  async listKeys() {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.keys;
+  }
+}</code></pre>
+<p>Common patterns: use <code>user-${userId}</code> keys for per-user context, <code>conversation-${sessionId}</code> for chat history, <code>config-${feature}</code> for agent settings. TTL automatically cleans up temporary data like session tokens.</p>
+<h2>TypeScript Integration for Type Safety</h2>
+<p>TypeScript developers can add type safety to nodejs agent memory operations:</p>
+<pre><code class="lang-typescript">interface MemoryValue {
+  [key: string]: any;
+}
+
+class TypedAgentMemory {
+  private baseUrl = 'https://botwire.dev';
+  
+  constructor(private namespace: string) {}
+  
+  async set&lt;T extends MemoryValue&gt;(key: string, value: T, ttlSeconds?: number): Promise&lt;boolean&gt; {
+    const payload: any = { value };
+    if (ttlSeconds) payload.ttl = ttlSeconds;
+    
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return response.ok;
+  }
+  
+  async get&lt;T extends MemoryValue&gt;(key: string): Promise&lt;T | null&gt; {
+    const response = await fetch(`${this.baseUrl}/memory/${this.namespace}/${key}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+    const data = await response.json();
+    return data.value as T;
+  }
+}
+
+// Usage with typescript ai memory
+const memory = new TypedAgentMemory('agent-prod');
+interface UserContext {
+  preferences: string[];
+  lastSeen: string;
+}
+
+await memory.set&lt;UserContext&gt;('user-456', {
+  preferences: ['technical', 'concise'],
+  lastSeen: new Date().toISOString()
+});</code></pre>
+<h2>When NOT to Use BotWire Memory</h2>
+<ul>
+<li><strong>Vector search</strong>: BotWire isn't a vector database. Use Pinecone/Weaviate for embedding similarity search.</li>
+<li><strong>High throughput</strong>: Free tier caps at 1000 writes/day. Use Redis for thousands of writes per minute.</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP calls take ~50-200ms. Use in-memory caches for microsecond response times.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Q: Why not just use Redis?</strong> A: Redis requires setup, hosting, authentication. BotWire works immediately with zero config.</p>
+<p><strong>Q: Is this actually free?</strong> A: Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card required.</p>
+<p><strong>Q: What about data privacy?</strong> A: It's open source (MIT license) and self-hostable. Or use namespaces that don't contain PII.</p>
+<p>BotWire Memory solves persistent storage for Node.js AI agents without the infrastructure overhead. Your agent remembers context across restarts, deployments, and machines.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Try it at <a href="https://botwire.dev">botwire.dev</a> — no signup required.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

@@ -23,16 +23,19 @@ nav a{color:#4CAF50;text-decoration:none;font-weight:600}
 <div class="c">
 <h1>Guides & Articles</h1>
 <p class="lede">Drop-in persistent memory for AI agents. Framework guides and integration patterns.</p>
-<ul><li style="background:#0f1a0f;padding:18px;border-radius:8px;margin-bottom:12px;border:1px solid #1a3a1a"><a href="/articles/cookbook"><strong>⭐ Cookbook — 20 Copy-Paste Recipes</strong></a><br><span>The fast-start page. Real code for the 20 most common memory patterns.</span></li>
-<li><a href="/articles/agent-long-term-memory-pattern"><strong>Short-Term vs Long-Term Memory for AI Agents</strong></a><br><span>Designer deciding memory architecture — what goes in-context, what goes in KV, what goes in vector DB.</span></li>
+<ul><li><a href="/articles/agent-long-term-memory-pattern"><strong>Short-Term vs Long-Term Memory for AI Agents</strong></a><br><span>Designer deciding memory architecture — what goes in-context, what goes in KV, what goes in vector DB.</span></li>
 <li><a href="/articles/agent-memory-vs-pinecone"><strong>BotWire Memory vs Pinecone: When to Use Which</strong></a><br><span>Dev comparing options, confused about when vector DBs are overkill for simple state.</span></li>
 <li><a href="/articles/ai-agent-memory-vs-redis"><strong>AI Agent Memory: BotWire vs Redis vs Vector DBs</strong></a><br><span>Dev evaluating options, currently considering Redis/Pinecone. Needs decision framework.</span></li>
 <li><a href="/articles/ai-agent-session-state-fastapi"><strong>Managing AI Agent Session State in FastAPI</strong></a><br><span>Backend dev shipping an AI agent via FastAPI who needs per-user session state.</span></li>
 <li><a href="/articles/ai-agent-user-preferences"><strong>How to Store Per-User Preferences for AI Agents</strong></a><br><span>Product builder who wants their agent to remember each user's preferences across sessions.</span></li>
 <li><a href="/articles/autogen-agent-memory"><strong>Adding Memory to AutoGen Agents</strong></a><br><span>AutoGen user whose agents lose conversation across restarts. Wants a one-class fix.</span></li>
+<li><a href="/articles/botwire-vs-langmem"><strong>BotWire vs LangMem: When Simplicity Wins</strong></a><br><span>LangChain user comparing their new LangMem to simpler external KV backends.</span></li>
+<li><a href="/articles/botwire-vs-mem0"><strong>BotWire vs Mem0: Picking the Right AI Memory Tool</strong></a><br><span>Dev evaluating Mem0 vs simpler KV alternatives. Wants honest trade-offs.</span></li>
+<li><a href="/articles/botwire-vs-zep"><strong>BotWire vs Zep: Comparing AI Agent Memory Backends</strong></a><br><span>Dev who tried Zep but finds it overkill for simple use cases.</span></li>
 <li><a href="/articles/claude-agent-memory"><strong>Giving Claude Agents Persistent Memory Between Sessions</strong></a><br><span>Anthropic SDK user building agents with Claude whose context vanishes each script run.</span></li>
 <li><a href="/articles/crewai-agent-memory"><strong>Persistent Memory for CrewAI Agents (Cross-Session State)</strong></a><br><span>CrewAI developer whose crew forgets everything between kickoff() calls. Needs memory that survives.</span></li>
 <li><a href="/articles/discord-bot-ai-memory"><strong>Building a Discord Bot With AI Memory (Per User, Per Channel)</strong></a><br><span>Discord bot dev whose AI responses forget user context every restart.</span></li>
+<li><a href="/articles/faq"><strong>BotWire FAQ: Memory, Pricing, Self-Hosting, Privacy</strong></a><br><span>Anyone evaluating BotWire who has objections before adopting.</span></li>
 <li><a href="/articles/langchain-persistent-memory"><strong>How to Add Persistent Memory to LangChain Agents</strong></a><br><span>Developer using LangChain whose agent loses all state when the script exits. Wants a drop-in solution.</span></li>
 <li><a href="/articles/langgraph-persistent-state"><strong>LangGraph Persistent State Across Runs</strong></a><br><span>LangGraph user whose stateful graph loses progress between process restarts.</span></li>
 <li><a href="/articles/llamaindex-agent-memory"><strong>Persistent Memory for LlamaIndex Agents</strong></a><br><span>LlamaIndex user whose QueryEngine/Agent loses context across calls. Wants drop-in persistence.</span></li>
@@ -40,6 +43,10 @@ nav a{color:#4CAF50;text-decoration:none;font-weight:600}
 <li><a href="/articles/multi-agent-shared-memory"><strong>Sharing Memory Between Multiple AI Agents</strong></a><br><span>Builder with multiple agents who need a common memory pool. Think research-team or trading-team patterns.</span></li>
 <li><a href="/articles/openai-assistants-api-memory"><strong>Adding External Memory to the OpenAI Assistants API</strong></a><br><span>OpenAI Assistants API user who wants memory outside the thread — cross-thread, cross-user, searchable.</span></li>
 <li><a href="/articles/python-ai-agent-key-value-store"><strong>Simple Key-Value Store for Python AI Agents</strong></a><br><span>Python dev who rejected Redis/Postgres as overkill and wants the simplest possible state.</span></li>
+<li><a href="/articles/quickstart-claude"><strong>Give Claude Persistent Memory in 2 Minutes</strong></a><br><span>Claude API user who wants a working persistent chat example in 2 minutes.</span></li>
+<li><a href="/articles/quickstart-crewai"><strong>BotWire + CrewAI Quickstart (2 Minutes)</strong></a><br><span>CrewAI dev who wants literal copy-paste integration.</span></li>
+<li><a href="/articles/quickstart-langchain"><strong>BotWire + LangChain Quickstart (2 Minutes)</strong></a><br><span>LangChain dev who wants a literal copy-paste 2-minute setup.</span></li>
+<li><a href="/articles/quickstart-nodejs"><strong>BotWire Memory from Node.js (via fetch)</strong></a><br><span>Node/TypeScript dev who wants to use BotWire before the official JS SDK ships.</span></li>
 <li><a href="/articles/semantic-kernel-memory"><strong>Persistent Memory for Semantic Kernel Agents</strong></a><br><span>Semantic Kernel user who needs memory that survives restarts across C#/Python kernels.</span></li>
 <li><a href="/articles/serverless-ai-agent-state"><strong>State for Serverless AI Agents (Lambda, Cloud Run, Vercel)</strong></a><br><span>Dev running agents on ephemeral serverless compute that resets every invocation.</span></li>
 <li><a href="/articles/telegram-bot-ai-memory"><strong>Telegram AI Bot With Persistent Memory Across Sessions</strong></a><br><span>Telegram bot dev whose AI agent forgets chat history when the server restarts.</span></li>

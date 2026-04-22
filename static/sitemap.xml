@@ -22,5 +22,13 @@
   <url><loc>https://botwire.dev/articles/discord-bot-ai-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://botwire.dev/articles/telegram-bot-ai-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://botwire.dev/articles/serverless-ai-agent-state</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/botwire-vs-mem0</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/botwire-vs-zep</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/botwire-vs-langmem</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/quickstart-langchain</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/quickstart-crewai</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/quickstart-claude</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/quickstart-nodejs</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/faq</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://botwire.dev/articles/cookbook</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
 </urlset>
