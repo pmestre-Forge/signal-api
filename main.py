@@ -369,10 +369,26 @@ def create_proposal(body: ProposalBody):
     return {"id": p.id, "status": p.status, "created_at": p.created_at}
 
 
+@app.get("/proposals-dashboard", include_in_schema=False)
+@app.get("/governance", include_in_schema=False)
+def proposals_dashboard():
+    """HTML dashboard for browsing proposals."""
+    p = Path(__file__).parent / "static" / "proposals.html"
+    if p.exists():
+        return HTMLResponse(p.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404)
+
+
 @app.get("/proposals", include_in_schema=False)
-def list_proposals(status: Optional[str] = None):
-    """List proposals, optionally filtered by status."""
+def list_proposals(request: Request, status: Optional[str] = None):
+    """List proposals. HTML for browsers, JSON for agents + `?format=json`."""
     import proposals as prop_store
+    accept = request.headers.get("accept", "").lower()
+    wants_json = ("application/json" in accept and "text/html" not in accept) or request.query_params.get("format") == "json"
+    if not wants_json:
+        p = Path(__file__).parent / "static" / "proposals.html"
+        if p.exists():
+            return HTMLResponse(p.read_text(encoding="utf-8"))
     items = prop_store.list_all()
     if status:
         items = [p for p in items if p.status == status]

@@ -41,37 +41,71 @@ def run_forgemaster() -> dict:
         for a in ops["actions_taken"]:
             print(f"  ACTION: {a}", flush=True)
 
-    # --- Job 2: CEO + Legion review of any pending proposals ---
-    print("\n[2/4] GOVERNANCE — reviewing pending proposals...", flush=True)
+    # --- Job 2: Auto-propose, review, execute ---
+    print("\n[2/4] GOVERNANCE — auto-propose + review + execute...", flush=True)
     ceo_results: list = []
+    exec_results: list = []
+    auto_ideas: list = []
     try:
+        # Step A: auto-proposer generates fresh ideas
+        from auto_proposer import propose_and_submit
+        auto_ideas = propose_and_submit(n=2)
+        if auto_ideas:
+            print(f"  Auto-proposer submitted {len(auto_ideas)} idea(s)", flush=True)
+        else:
+            print("  Auto-proposer: no ideas today", flush=True)
+
+        # Step B: CEO + Legion review pending
         from ceo_agent import process_pending
         ceo_results = process_pending()
-        if not ceo_results:
-            print("  No pending proposals.", flush=True)
-        else:
+        if ceo_results:
             for r in ceo_results:
                 if "error" in r:
-                    print(f"  {r['proposal_id']}: ERROR {r['error']}", flush=True)
+                    print(f"  REVIEW ERR {r['proposal_id']}: {r['error']}", flush=True)
                     continue
                 d = r["decision"]
                 print(f"  {r['proposal_id']}: {d['decision']} (conf {d['confidence']:.0%}) — {d['reasoning'][:80]}", flush=True)
+
+        # Step C: Executor auto-ships approved + safe proposals
+        from executor import execute_all_approved
+        exec_results = execute_all_approved()
+        for r in exec_results:
+            if r.get("executed"):
+                print(f"  SHIPPED {r['proposal_id']}: {r.get('action')}", flush=True)
+            elif "error" in r:
+                print(f"  EXEC ERR {r['proposal_id']}: {r['error']}", flush=True)
+            else:
+                print(f"  skipped {r['proposal_id']}: {r.get('skipped','?')}", flush=True)
     except Exception as e:
-        print(f"  Governance skipped: {e}", flush=True)
+        import traceback
+        print(f"  Governance error: {e}", flush=True)
+        traceback.print_exc()
 
     # --- Job 3: Intelligence ---
     print("\n[3/4] INTELLIGENCE — gathering data...", flush=True)
     intel_entry = update_intelligence(ops)
     # Append governance results into the intel entry so the email covers them
-    if ceo_results:
-        lines = ["", "--- CEO decisions today ---"]
-        for r in ceo_results:
-            if "error" in r:
-                lines.append(f"  FAILED {r['proposal_id']}: {r['error']}")
-                continue
-            d = r["decision"]
-            lines.append(f"  [{d['decision']}] {r['proposal_id']} (conf {d['confidence']:.0%})")
-            lines.append(f"    {d['reasoning'][:200]}")
+    if auto_ideas or ceo_results or exec_results:
+        lines = ["", "--- Governance today ---"]
+        if auto_ideas:
+            lines.append(f"  Auto-proposed: {len(auto_ideas)}")
+            for a in auto_ideas:
+                lines.append(f"    * {a['title']} [{a['type']}] — {a.get('why_now','')}")
+        if ceo_results:
+            lines.append(f"  CEO decisions: {len(ceo_results)}")
+            for r in ceo_results:
+                if "error" in r:
+                    lines.append(f"    FAILED {r['proposal_id']}: {r['error']}")
+                    continue
+                d = r["decision"]
+                lines.append(f"    [{d['decision']}] {r['proposal_id']} (conf {d['confidence']:.0%})")
+                lines.append(f"      {d['reasoning'][:200]}")
+        if exec_results:
+            shipped = [r for r in exec_results if r.get("executed")]
+            if shipped:
+                lines.append(f"  Auto-shipped: {len(shipped)}")
+                for r in shipped:
+                    lines.append(f"    * {r['proposal_id']}: {r.get('action')} — {r.get('notes','')[:150]}")
         intel_entry = (intel_entry or "") + "\n".join(lines)
     print(f"  Intelligence updated", flush=True)
 
