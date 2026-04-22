@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portkey Gateway + BotWire Memory: Gateway + State | BotWire</title>
+<meta name="description" content="Dev using Portkey as LLM gateway who also needs cross-invocation memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="portkey memory, portkey gateway botwire, llm gateway state, portkey alternative">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/portkey-gateway-memory">
+<meta property="og:title" content="Portkey Gateway + BotWire Memory: Gateway + State">
+<meta property="og:description" content="Dev using Portkey as LLM gateway who also needs cross-invocation memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/portkey-gateway-memory">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/portkey-gateway-memory.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portkey Gateway + BotWire Memory: Gateway + State">
+<meta name="twitter:description" content="Dev using Portkey as LLM gateway who also needs cross-invocation memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="twitter:image" content="https://botwire.dev/og/portkey-gateway-memory.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Portkey Gateway + BotWire Memory: Gateway + State", "description": "Dev using Portkey as LLM gateway who also needs cross-invocation memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/portkey-gateway-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/portkey-gateway-memory"}, "keywords": "portkey memory, portkey gateway botwire, llm gateway state, portkey alternative", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Portkey Gateway + BotWire Memory: Gateway + State</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>You're running LLMs through Portkey's gateway but hitting a wall: your agents forget everything between requests. User sessions, conversation history, preferences — all gone when the process restarts. You need persistent memory that survives across invocations while keeping Portkey's routing and observability.</p>
+<h2>The Stateless Gateway Problem</h2>
+<p>LLM gateways like Portkey excel at routing, load balancing, and observability, but they're stateless by design. Each request is independent — perfect for reliability, terrible for agents that need to remember things.</p>
+<p>Here's what breaks: your customer service bot forgets the user's name mid-conversation when it restarts. Your coding assistant loses track of the current project context. Your RAG pipeline can't remember which documents were already processed. You end up rebuilding user context from scratch on every cold start, burning tokens and creating janky experiences.</p>
+<p>The typical workaround — cramming everything into prompt context — hits token limits fast and makes every request expensive. Session caches help during a single conversation but vanish when your container restarts. You need something that persists across processes, machines, and deployments.</p>
+<h2>The Fix: BotWire Memory + Portkey Gateway</h2>
+<p>Install BotWire Memory to add persistent state to your Portkey setup:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's the basic pattern — wrap your Portkey calls with memory operations:</p>
+<pre><code class="lang-python">from botwire import Memory
+from portkey_ai import Portkey
+
+# Initialize memory namespace and Portkey client
+memory = Memory("user-sessions")
+portkey = Portkey(
+    api_key="your-portkey-key",
+    virtual_key="your-virtual-key"
+)
+
+def chat_with_memory(user_id: str, message: str):
+    # Get conversation history from memory
+    history = memory.get(f"{user_id}_history") or []
+    
+    # Add user message
+    history.append({"role": "user", "content": message})
+    
+    # Call through Portkey gateway
+    response = portkey.chat.completions.create(
+        model="gpt-4",
+        messages=history[-10:]  # Keep last 10 messages
+    )
+    
+    # Store updated history
+    assistant_msg = {"role": "assistant", "content": response.choices[0].message.content}
+    history.append(assistant_msg)
+    memory.set(f"{user_id}_history", history)
+    
+    return response.choices[0].message.content</code></pre>
+<h2>How It Works</h2>
+<p>BotWire Memory acts as a persistent key-value store that survives restarts. Each <code>Memory("namespace")</code> creates an isolated space for your data. The <code>set()</code> and <code>get()</code> operations hit a free HTTP API at botwire.dev — no signup required.</p>
+<p>The memory persists across process restarts, container deployments, and machine changes. Your Portkey gateway handles the LLM routing while BotWire handles the state.</p>
+<p>For more complex scenarios, you can store structured data and implement TTL-style cleanup:</p>
+<pre><code class="lang-python">import json
+from datetime import datetime, timedelta
+from botwire import Memory
+
+memory = Memory("agent-workspace")
+
+def store_user_context(user_id: str, context: dict):
+    # Add timestamp for manual TTL
+    context["last_updated"] = datetime.now().isoformat()
+    memory.set(f"context_{user_id}", context)
+
+def get_fresh_context(user_id: str, max_age_hours: int = 24):
+    context = memory.get(f"context_{user_id}")
+    if not context:
+        return None
+    
+    last_updated = datetime.fromisoformat(context["last_updated"])
+    if datetime.now() - last_updated &gt; timedelta(hours=max_age_hours):
+        memory.delete(f"context_{user_id}")
+        return None
+    
+    return context
+
+# List all stored contexts
+all_keys = memory.list()  # Returns all keys in namespace
+context_keys = [k for k in all_keys if k.startswith("context_")]</code></pre>
+<p>This pattern works across multiple processes. Your web server, background workers, and scheduled jobs all share the same memory namespace.</p>
+<h2>LangChain Integration with Portkey</h2>
+<p>If you're using LangChain with Portkey, BotWire provides a drop-in chat history adapter:</p>
+<pre><code class="lang-python">from langchain_community.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage, SystemMessage
+from botwire import BotWireChatHistory
+
+# LangChain with Portkey endpoint
+llm = ChatOpenAI(
+    openai_api_base="https://api.portkey.ai/v1",
+    openai_api_key="your-portkey-key",
+    model="gpt-4"
+)
+
+# Persistent chat history
+history = BotWireChatHistory(session_id="user-42")
+
+# Add messages - they persist automatically
+history.add_user_message("What's the weather?")
+history.add_ai_message("I need your location to check weather.")
+
+# Get messages for LangChain chain
+messages = history.messages
+response = llm(messages)
+history.add_ai_message(response.content)</code></pre>
+<p>The <code>BotWireChatHistory</code> handles the serialization and gives you a LangChain-compatible interface that persists across restarts.</p>
+<h2>When NOT to Use BotWire</h2>
+<p><strong>Don't use BotWire for:</strong></p>
+<ul>
+<li><strong>Vector search or semantic similarity</strong> — it's key-value only, not a vector database</li>
+<li><strong>High-throughput scenarios</strong> — free tier limits to 1000 writes/day per namespace</li>
+<li><strong>Sub-millisecond latency</strong> — HTTP round-trip adds ~50-200ms depending on your location</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Q: Why not just use Redis or database?</strong> A: BotWire requires zero setup — no servers, no connection strings, no auth. Perfect for prototypes and small production workloads where you want memory without infrastructure.</p>
+<p><strong>Q: Is this actually free?</strong> A: Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card required. You can self-host the MIT-licensed version if you need more.</p>
+<p><strong>Q: What about data privacy?</strong> A: Data flows through botwire.dev by default. For sensitive data, self-host the open-source version — it's a single FastAPI + SQLite service.</p>
+<p>BotWire Memory bridges the gap between stateless gateways and stateful agents. Your Portkey setup gets persistent memory without architectural changes.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Start building at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

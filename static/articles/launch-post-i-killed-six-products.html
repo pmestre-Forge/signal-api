@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I killed six of my own products this week | BotWire</title>
+<meta name="description" content="A 728-persona audit told me to KILL everything. Here's what I kept, what I changed, and what I'd do differently. Solo founder post-mortem.">
+<meta name="robots" content="index, follow, max-snippet:-1">
+<link rel="canonical" href="https://botwire.dev/articles/launch-post-i-killed-six-products">
+<meta property="og:title" content="I killed six of my own products this week">
+<meta property="og:description" content="A 728-persona audit told me to KILL everything. Here's what I kept, what I changed, and what I'd do differently. Solo founder post-mortem.">
+<meta property="og:url" content="https://botwire.dev/articles/launch-post-i-killed-six-products">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/launch-post-i-killed-six-products.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="I killed six of my own products this week">
+<meta name="twitter:description" content="A 728-persona audit told me to KILL everything. Here's what I kept, what I changed, and what I'd do differently. Solo founder post-mortem.">
+<meta name="twitter:image" content="https://botwire.dev/og/launch-post-i-killed-six-products.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "I killed six of my own products this week", "description": "A 728-persona audit told me to KILL everything. Here's what I kept, what I changed, and what I'd do differently. Solo founder post-mortem.", "url": "https://botwire.dev/articles/launch-post-i-killed-six-products", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Person", "name": "Pedro Mestre", "url": "https://github.com/pmestre-Forge"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/launch-post-i-killed-six-products"}, "image": "https://botwire.dev/og/launch-post-i-killed-six-products.svg"}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.75;font-size:18px}
+nav{padding:15px 20px;border-bottom:1px solid #222}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600}
+.c{max-width:680px;margin:0 auto;padding:40px 20px 80px}
+h1{color:#fff;font-size:2.4em;line-height:1.15;margin-bottom:10px;letter-spacing:-0.02em}
+.meta{color:#888;margin-bottom:40px;font-size:0.92em}
+article h2{color:#fff;font-size:1.45em;margin:40px 0 14px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 18px;color:#c5c5c5}
+article ul,article ol{margin:0 0 20px 24px;color:#c5c5c5}
+article li{margin-bottom:7px}
+article a{color:#4CAF50;text-decoration:none;border-bottom:1px dashed #4CAF50}
+article a:hover{border-bottom-style:solid}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:22px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0;text-align:center}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> &middot; <a href="/articles/">All guides</a></nav>
+<div class="c">
+<article>
+<h1>I killed six of my own products this week</h1>
+<p class="meta">Pedro Mestre &middot; April 22, 2026 &middot; Solo founder, BotWire</p>
+<h2>I killed six of my own products this week</h2>
+<p>Well, not literally killed. But I demoted them so hard they might as well be dead.</p>
+<p>Two weeks ago, I had seven products under the BotWire umbrella: trading signals, memory, identity, logs, notifications, config store, and DMs. All "agent infrastructure" for the coming AI economy. I was charging $0.002 per memory write, had beautiful landing pages for each service, and exactly zero external users after 10 days.</p>
+<p>This week, I ran a 728-persona audit that cost me $4 in Claude API calls. The verdict? Kill everything except memory. So I did.</p>
+<h2>What I actually built (and why it was probably dumb)</h2>
+<p>Let me be honest about what BotWire was two weeks ago: a premature infrastructure play for an agent economy that doesn't exist yet.</p>
+<p>I built seven microservices in ~14 days:</p>
+<ul>
+<li><strong>Trading signals</strong>: AI agents sharing market insights ($0.01/signal)</li>
+<li><strong>Memory</strong>: Persistent storage for agent conversations ($0.002/write)</li>
+<li><strong>Identity</strong>: Agent profiles and reputation systems</li>
+<li><strong>Logs</strong>: Structured logging for agent interactions</li>
+<li><strong>Notifications</strong>: Cross-agent messaging</li>
+<li><strong>Config store</strong>: Environment management</li>
+<li><strong>DMs</strong>: Private agent-to-agent communication</li>
+</ul>
+<p>The architecture was clean. The APIs worked. The pricing made sense (in theory). But I was building for a world where thousands of autonomous agents would need to talk to each other, remember things, and transact value.</p>
+<p>That world is probably 2+ years away. I was solving tomorrow's problems while ignoring today's.</p>
+<h2>728 AI employees told me the truth</h2>
+<p>Instead of guessing why nobody was using my stuff, I decided to ask. But not real people—I asked AI.</p>
+<p>I prompted Claude to role-play as 104 different employee archetypes (backend dev, product manager, data scientist, etc.) across all seven products. Each persona evaluated whether they'd actually use the product, what problem it solved, and how urgent that problem felt.</p>
+<pre><code class="lang-plain">You are a Senior Backend Engineer at a Series B startup. 
+Your team is exploring AI agents for customer support.
+Evaluate BotWire Memory: persistent storage for AI agent conversations.
+Rate urgency (1-10) and explain your reasoning.</code></pre>
+<p>728 evaluations later (104 personas × 7 products), the pattern was brutal:</p>
+<p><strong>Trading signals</strong>: "Interesting but not urgent. We're not building financial agents yet." (avg urgency: 2.3) <strong>Identity/Logs/Notifications/Config/DMs</strong>: "Infrastructure for a future we're not ready for." (avg urgency: 1.8-2.1)</p>
+<p>But <strong>Memory</strong> was different: "We're already struggling with context limits in our ChatGPT integration. This solves a real problem we have today." (avg urgency: 7.2)</p>
+<p>The signal was clear. One product was solving a problem developers actually feel right now. The other six were building for a future that hasn't arrived.</p>
+<h2>What I changed this week</h2>
+<p>I spent four days rebuilding everything around memory:</p>
+<p><strong>Pricing</strong>: Killed the $0.002/write paywall. Memory operations are now free. The other services keep their paywalls (as a natural filter until the market matures).</p>
+<p><strong>Positioning</strong>: Rewrote the landing page from "AI agent infrastructure platform" to "persistent memory for AI agents." Much clearer.</p>
+<p><strong>Developer experience</strong>: Shipped a Python SDK to PyPI. Installation is now <code>pip install botwire</code> instead of curl commands.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+memory = Memory("your-api-key")
+memory.store("user_123", {
+    "preferences": {"language": "spanish"},
+    "conversation_history": [...],
+    "context": "returning customer, prefers email"
+})
+
+context = memory.recall("user_123")</code></pre>
+<p><strong>SEO</strong>: Wrote 60+ articles targeting long-tail queries like "LangChain conversation memory," "CrewAI persistent storage," "Claude API context management." Cost: ~$10 in Claude API calls to generate outlines and drafts.</p>
+<p>The other products still exist but they're hidden in the docs. I'm not deleting code that works, but I'm not pretending there's demand either.</p>
+<h2>Don't do what I did (lessons from a premature optimizer)</h2>
+<p><strong>Build for problems that exist today, not tomorrow.</strong> I got excited about the agent economy vision and started building infrastructure before there were enough agents to need infrastructure. Classic cart-before-horse.</p>
+<p><strong>Talk to one real user instead of building seven theoretical products.</strong> My 728-persona audit was clever, but I should have done customer interviews first. AI personas are great for scale validation, terrible for initial problem discovery.</p>
+<p><strong>Free is a feature when you're proving value.</strong> Charging $0.002/write made sense on a spreadsheet but created friction when developers just wanted to try something. The micropayment paywall was optimization for revenue I hadn't earned yet.</p>
+<p><strong>Product focus beats product breadth at 0 users.</strong> Seven products with zero users taught me nothing. One product with 50 users would teach me everything.</p>
+<h2>What's next</h2>
+<p>Memory is the wedge. Get developers storing conversation context, preferences, and agent state. Prove the value there. The other infrastructure pieces (identity, notifications, etc.) become relevant as their agent usage grows.</p>
+<p>I'm targeting the LangChain/CrewAI/AutoGPT ecosystem first. Developers building chatbots, customer support agents, and workflow automation who hit GPT's context limits and need somewhere to store conversation state.</p>
+<p>The usage pattern is simple: your agent stores context after each interaction, recalls it before the next one. Persistent memory across conversations, users, and sessions.</p>
+<p>If you're building AI agents and dealing with context limits, try it:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<div class="cta">
+<p style="font-size:1.15em;margin-bottom:8px"><strong>If the story resonates:</strong></p>
+<p><code>pip install botwire</code></p>
+<p style="margin-top:10px"><a href="https://botwire.dev" style="color:#4CAF50;font-weight:600">botwire.dev</a> &middot; <a href="/playground" style="color:#4CAF50">Try it live</a></p>
+</div>
+</article>
+<footer>BotWire &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a></footer>
+</div>
+</body>
+</html>

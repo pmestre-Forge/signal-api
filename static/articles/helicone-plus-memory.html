@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helicone + Memory: Tracking LLM Costs per Agent Namespace | BotWire</title>
+<meta name="description" content="Helicone user wanting to group LLM call costs by persistent agent namespace. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="helicone memory, per-agent cost tracking, helicone botwire, llm observability memory">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/helicone-plus-memory">
+<meta property="og:title" content="Helicone + Memory: Tracking LLM Costs per Agent Namespace">
+<meta property="og:description" content="Helicone user wanting to group LLM call costs by persistent agent namespace. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/helicone-plus-memory">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/helicone-plus-memory.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Helicone + Memory: Tracking LLM Costs per Agent Namespace">
+<meta name="twitter:description" content="Helicone user wanting to group LLM call costs by persistent agent namespace. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="twitter:image" content="https://botwire.dev/og/helicone-plus-memory.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Helicone + Memory: Tracking LLM Costs per Agent Namespace", "description": "Helicone user wanting to group LLM call costs by persistent agent namespace. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/helicone-plus-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/helicone-plus-memory"}, "keywords": "helicone memory, per-agent cost tracking, helicone botwire, llm observability memory", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Helicone + Memory: Tracking LLM Costs per Agent Namespace</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When you're tracking LLM costs across multiple AI agents, you need to group expenses by agent namespace — not just by session or user. This lets you see which agents are burning through your OpenAI budget and optimize accordingly. Here's how to implement <strong>helicone memory</strong> with persistent agent state using BotWire.</p>
+<h2>The Problem: Agent Costs Disappear Into the Void</h2>
+<p>Most LLM observability tools track costs per API call or user session, but miss the bigger picture: <strong>which specific agent logic is expensive?</strong> Your customer service bot might be cheap while your code review agent burns $50/day on complex prompts.</p>
+<p>Without per-agent cost tracking, you're flying blind:</p>
+<pre><code class="lang-python"># This tells you nothing about which agent made the call
+response = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Debug this code..."}]
+)
+# Was this the expensive code-review agent or cheap FAQ bot?</code></pre>
+<p>When agents restart, crash, or scale across machines, their context vanishes. You lose the thread between agent identity and LLM spend. Helicone shows you spent $200 yesterday — but on which agents? For what conversations? The observability gap kills cost optimization.</p>
+<h2>The Fix: Persistent Agent Namespaces</h2>
+<p>BotWire Memory gives each agent a persistent namespace that survives restarts and process changes. Tag your LLM calls with stable agent identifiers:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+import openai
+
+# Each agent gets persistent memory
+agent_memory = Memory("code-reviewer-v2")
+
+# Track agent context before LLM calls  
+agent_memory.set("current_task", "reviewing user-123/pull-request-456")
+agent_memory.set("model_used", "gpt-4")
+agent_memory.set("session_start", "2024-01-15T10:30:00Z")
+
+# Make your LLM call with agent context
+response = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": f"Review this PR: {pr_content}"}],
+    metadata={"agent_namespace": "code-reviewer-v2"}
+)
+
+# Log the call for cost tracking
+agent_memory.set(f"call_{response.id}", {
+    "tokens": response.usage.total_tokens,
+    "cost_estimate": response.usage.total_tokens * 0.00003,
+    "timestamp": "2024-01-15T10:31:15Z"
+})</code></pre>
+<h2>How It Works: Memory That Survives Everything</h2>
+<p>The namespace <code>"code-reviewer-v2"</code> persists across machine restarts, deployments, and scale events. Your agent can crash at 3am and resume exactly where it left off:</p>
+<pre><code class="lang-python"># Agent restarts on different machine
+agent_memory = Memory("code-reviewer-v2")
+
+# Context survives — no cold start
+current_task = agent_memory.get("current_task")  
+# Returns: "reviewing user-123/pull-request-456"
+
+# Track cumulative costs per agent
+daily_calls = agent_memory.get("daily_call_count") or 0
+agent_memory.set("daily_call_count", daily_calls + 1)
+
+total_cost = agent_memory.get("daily_cost") or 0.0
+agent_memory.set("daily_cost", total_cost + estimated_call_cost)</code></pre>
+<p>For complex workflows, list all memory keys to debug state:</p>
+<pre><code class="lang-python"># Debug what this agent remembers
+all_keys = agent_memory.list_keys()
+print(f"Agent {namespace} has {len(all_keys)} memory entries")
+
+# Clean up old data
+if "temp_data" in all_keys:
+    agent_memory.delete("temp_data")</code></pre>
+<p>The memory is shared across processes — if your agent spawns workers, they all see the same namespace. This makes cost attribution accurate even in distributed setups.</p>
+<h2>Integration with LangChain Agents</h2>
+<p>For LangChain-based agents, use the chat history adapter to maintain conversation context alongside cost tracking:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory, Memory
+from langchain.agents import create_openai_functions_agent
+
+# Persistent chat history per agent instance  
+chat_history = BotWireChatHistory(session_id="support-agent-prod")
+cost_tracker = Memory("support-agent-prod")
+
+# Your agent maintains context across restarts
+agent = create_openai_functions_agent(
+    llm=llm,
+    tools=tools,
+    memory=chat_history
+)
+
+# Track costs with full context
+def track_llm_call(response):
+    cost_tracker.set(f"call_{response.id}", {
+        "conversation_id": "support-agent-prod", 
+        "tokens": response.usage.total_tokens,
+        "user_query": chat_history.messages[-2].content,
+        "agent_response": chat_history.messages[-1].content
+    })</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search</strong>: This isn't a vector database. Use Pinecone/Weaviate for semantic memory</li>
+<li><strong>High-throughput logging</strong>: 1000 writes/day limit. Use ClickHouse for heavy telemetry</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP-based, not local cache. Use Redis for ultra-fast access</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires infrastructure. BotWire is zero-setup with a forever-free tier. For prototypes and small agents, the cognitive overhead isn't worth it.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, unlimited reads, 50MB storage. No credit card, no signup, no surprise bills.</p>
+<p><strong>What about data privacy?</strong> It's open source (MIT license) and self-hostable. The hosted version doesn't log or analyze your data — it's just key-value storage.</p>
+<h2>Start Tracking Agent Costs</h2>
+<p>BotWire Memory solves the "which agent spent what" problem with persistent namespaces and zero infrastructure overhead.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full docs and self-hosting instructions: https://botwire.dev</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

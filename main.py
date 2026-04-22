@@ -335,6 +335,74 @@ def playground():
     raise HTTPException(status_code=404)
 
 
+@app.get("/og/{slug}.svg", include_in_schema=False)
+def og_image(slug: str):
+    """Auto-generated OG image per article slug.
+
+    Returns an SVG that renders the article title + BotWire branding.
+    Twitter/LinkedIn/Discord/Slack all accept SVG in og:image.
+    """
+    if not _ARTICLE_SLUG_RE.match(slug):
+        raise HTTPException(status_code=400, detail="Invalid slug")
+    if slug == "index":
+        title = "BotWire"
+        tagline = "Persistent memory for AI agents"
+    else:
+        article_path = _ARTICLES_DIR / f"{slug}.html"
+        if not article_path.exists():
+            raise HTTPException(status_code=404)
+        # Extract <title> from the article HTML (fast — no parsing lib)
+        html = article_path.read_text(encoding="utf-8")
+        m = re.search(r"<title>([^<|]+?)(?:\s*\|.*?)?</title>", html)
+        title = (m.group(1).strip() if m else slug.replace("-", " ").title())[:80]
+        tagline = "botwire.dev · pip install botwire"
+
+    # Word-wrap title to ~28 chars per line
+    words = title.split()
+    lines: list[str] = []
+    current = ""
+    for w in words:
+        if len(current) + len(w) + 1 <= 28:
+            current = (current + " " + w).strip()
+        else:
+            if current:
+                lines.append(current)
+            current = w
+    if current:
+        lines.append(current)
+    lines = lines[:3]  # cap at 3 lines
+
+    def esc(s: str) -> str:
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    line_height = 82
+    y0 = 330 - (len(lines) - 1) * line_height // 2
+    title_tspans = "".join(
+        f'<tspan x="80" y="{y0 + i * line_height}">{esc(line)}</tspan>'
+        for i, line in enumerate(lines)
+    )
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs>
+  <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#0a0a0a"/>
+    <stop offset="100%" stop-color="#0d1f0d"/>
+  </linearGradient>
+  <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#4CAF50"/>
+    <stop offset="100%" stop-color="#6C9FFF"/>
+  </linearGradient>
+</defs>
+<rect width="1200" height="630" fill="url(#bg)"/>
+<rect x="0" y="0" width="6" height="630" fill="url(#accent)"/>
+<text x="80" y="120" font-family="-apple-system,Segoe UI,sans-serif" font-size="28" font-weight="600" fill="#4CAF50" letter-spacing="2">BOTWIRE</text>
+<text font-family="-apple-system,Segoe UI,sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">{title_tspans}</text>
+<text x="80" y="550" font-family="ui-monospace,Menlo,monospace" font-size="22" fill="#8be9fd">{esc(tagline)}</text>
+<text x="80" y="585" font-family="-apple-system,Segoe UI,sans-serif" font-size="18" fill="#666">Persistent memory · LangChain · CrewAI · AutoGen · Claude · MCP</text>
+</svg>"""
+    return Response(content=svg, media_type="image/svg+xml")
+
+
 @app.get("/status", include_in_schema=False)
 def status_page():
     """Live platform stats page."""

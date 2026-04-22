@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pydantic Graph Agents + Persistent State | BotWire</title>
+<meta name="description" content="Pydantic Graph user whose nodes need to share and persist state across executions. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta name="keywords" content="pydantic graph memory, pydantic-graph agent, graph agent state, pydantic ai graph">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/pydantic-graph-agents-memory">
+<meta property="og:title" content="Pydantic Graph Agents + Persistent State">
+<meta property="og:description" content="Pydantic Graph user whose nodes need to share and persist state across executions. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta property="og:url" content="https://botwire.dev/articles/pydantic-graph-agents-memory">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/pydantic-graph-agents-memory.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pydantic Graph Agents + Persistent State">
+<meta name="twitter:description" content="Pydantic Graph user whose nodes need to share and persist state across executions. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta name="twitter:image" content="https://botwire.dev/og/pydantic-graph-agents-memory.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Pydantic Graph Agents + Persistent State", "description": "Pydantic Graph user whose nodes need to share and persist state across executions. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG", "url": "https://botwire.dev/articles/pydantic-graph-agents-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/pydantic-graph-agents-memory"}, "keywords": "pydantic graph memory, pydantic-graph agent, graph agent state, pydantic ai graph", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Pydantic Graph Agents + Persistent State</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Pydantic Graph agents typically lose their state between runs. Your carefully orchestrated nodes can't remember what happened in previous executions, breaking multi-turn workflows and forcing you to rebuild context from scratch every time.</p>
+<h2>The State Management Problem</h2>
+<p>When building <strong>pydantic graph agents</strong>, you quickly hit a wall: nodes execute, produce results, then vanish. The next time your <strong>pydantic-graph agent</strong> runs, it has zero memory of previous decisions, user preferences, or intermediate computations.</p>
+<p>This breaks real-world scenarios:</p>
+<ul>
+<li>Multi-step research agents that need to remember findings across sessions</li>
+<li>Recommendation systems that should learn from user feedback</li>
+<li>Workflow orchestrators that pause and resume complex processes</li>
+<li>Agent conversations that span days or weeks</li>
+</ul>
+<p>Most developers resort to hacky solutions: pickle files, JSON dumps, or passing massive state objects between function calls. These approaches are brittle, don't survive process restarts, and create tight coupling between your <strong>graph agent state</strong> logic and storage concerns.</p>
+<p>You need persistent memory that survives restarts, works across different processes, and doesn't require complex infrastructure setup.</p>
+<h2>The Fix: Persistent Memory for Graph Agents</h2>
+<p>BotWire Memory gives your <strong>pydantic ai graph</strong> agents persistent key-value storage that works immediately:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+from pydantic import BaseModel
+from typing import Dict, Any
+
+class AgentState(BaseModel):
+    user_preferences: Dict[str, Any] = {}
+    conversation_context: list = []
+    workflow_step: int = 0
+
+def my_graph_node(state: AgentState, node_id: str):
+    # Initialize persistent memory for this agent
+    memory = Memory(f"agent-{node_id}")
+    
+    # Load previous state
+    saved_state = memory.get("agent_state")
+    if saved_state:
+        state = AgentState.model_validate(saved_state)
+    
+    # Your node logic here
+    state.workflow_step += 1
+    state.conversation_context.append("processed step")
+    
+    # Persist updated state
+    memory.set("agent_state", state.model_dump())
+    return state</code></pre>
+<h2>How It Works</h2>
+<p>The code above creates a persistent memory namespace for each agent instance. When your <strong>pydantic graph memory</strong> needs to survive restarts, the <code>Memory</code> class handles HTTP requests to a free backend service at botwire.dev.</p>
+<p>Here's a more complete example showing cross-node state sharing:</p>
+<pre><code class="lang-python">from botwire import Memory
+from datetime import datetime
+
+class MultiNodeAgent:
+    def __init__(self, agent_id: str):
+        self.memory = Memory(f"graph-agent-{agent_id}")
+    
+    def research_node(self, query: str):
+        # Store research findings
+        findings = {"query": query, "timestamp": datetime.now().isoformat()}
+        
+        # Get existing research history
+        history = self.memory.get("research_history") or []
+        history.append(findings)
+        
+        self.memory.set("research_history", history)
+        self.memory.set("last_activity", "research")
+        return findings
+    
+    def analysis_node(self):
+        # Access research from previous node
+        history = self.memory.get("research_history") or []
+        last_activity = self.memory.get("last_activity")
+        
+        if not history:
+            return {"error": "No research data found"}
+        
+        analysis = {"findings_count": len(history), "last_research": history[-1]}
+        self.memory.set("analysis_result", analysis)
+        return analysis
+
+# Works across different Python processes
+agent = MultiNodeAgent("user-123")
+agent.research_node("market trends")
+# Process restarts, different machine, etc.
+agent = MultiNodeAgent("user-123")  # Same ID = same memory
+result = agent.analysis_node()  # Has access to research data</code></pre>
+<p>The memory persists automatically. You can also list all keys with <code>memory.list_keys()</code>, delete specific entries with <code>memory.delete(key)</code>, or clear everything with <code>memory.clear()</code>.</p>
+<p>For time-sensitive data, set TTL: <code>memory.set("temp_data", value, ttl_seconds=3600)</code>.</p>
+<h2>Framework Integration</h2>
+<p>BotWire includes helpers for popular agent frameworks. If you're using CrewAI alongside Pydantic graphs:</p>
+<pre><code class="lang-python">from botwire.memory import memory_tools
+from crewai import Agent, Task, Crew
+
+# Get memory tools for your crew
+tools = memory_tools("my-crew-memory")
+
+# Your crew agents can now remember/recall/list_memory
+researcher = Agent(
+    role="Research Specialist",
+    tools=tools,
+    # Agent will have access to remember(), recall(), list_memory() functions
+)
+
+# The tools automatically namespace memory by crew ID
+# and integrate with your existing pydantic graph workflows</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't suitable for:</p>
+<ul>
+<li><strong>Vector similarity search</strong> — it's key-value storage, not a vector database</li>
+<li><strong>High-frequency writes</strong> — free tier caps at 1000 writes/day per namespace</li>
+<li><strong>Sub-millisecond latency</strong> — HTTP overhead makes it slower than in-memory solutions</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, hosting, and connection management. BotWire works immediately with zero configuration and has a generous free tier.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, 50MB storage, unlimited reads. No signup required, no API keys, no credit card.</p>
+<p><strong>What about data privacy?</strong> Data is stored on botwire.dev servers. For sensitive use cases, you can self-host the open-source version (single FastAPI + SQLite service).</p>
+<h2>Get Started</h2>
+<p>Add persistent memory to your pydantic graph agents in under 60 seconds. Your nodes will finally remember what matters between executions.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting guide at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Humanloop + Persistent Memory for Prompt Iteration | BotWire</title>
+<meta name="description" content="Humanloop user iterating prompts whose agents need persistent state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="humanloop memory, humanloop agent, prompt iteration memory, humanloop botwire">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/humanloop-agent-memory">
+<meta property="og:title" content="Humanloop + Persistent Memory for Prompt Iteration">
+<meta property="og:description" content="Humanloop user iterating prompts whose agents need persistent state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/humanloop-agent-memory">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/humanloop-agent-memory.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Humanloop + Persistent Memory for Prompt Iteration">
+<meta name="twitter:description" content="Humanloop user iterating prompts whose agents need persistent state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="twitter:image" content="https://botwire.dev/og/humanloop-agent-memory.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Humanloop + Persistent Memory for Prompt Iteration", "description": "Humanloop user iterating prompts whose agents need persistent state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/humanloop-agent-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/humanloop-agent-memory"}, "keywords": "humanloop memory, humanloop agent, prompt iteration memory, humanloop botwire", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Humanloop + Persistent Memory for Prompt Iteration</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When iterating on Humanloop prompts, your agents lose all context between runs. Each prompt test starts fresh, making it impossible to build conversational flows or maintain state across iterations. BotWire Memory solves this by giving your Humanloop agents persistent, cross-session memory that survives restarts.</p>
+<h2>The Problem: Stateless Prompt Iteration</h2>
+<p>Humanloop excels at prompt versioning and A/B testing, but every agent execution is isolated. Your conversational agent forgets previous interactions, your multi-step workflows restart from scratch, and complex prompt chains lose their context.</p>
+<p>Here's what breaks: You're testing a customer service agent that should remember user preferences across conversations. In production, users expect continuity. But during Humanloop prompt iteration, each test run is a blank slate. Your agent can't recall that "John prefers email notifications" or "Sarah's last order was delayed."</p>
+<p>This forces you to either:</p>
+<ul>
+<li>Mock state in your prompts (unrealistic)</li>
+<li>Test only single-turn interactions (limited)</li>
+<li>Build temporary state management (time-consuming)</li>
+</ul>
+<p>The result? Your Humanloop testing environment doesn't match production behavior, leading to poor prompt decisions and frustrated users.</p>
+<h2>The Fix: Persistent Agent Memory</h2>
+<p>Install BotWire to add persistent key-value memory to any Humanloop agent:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Basic usage that works immediately:</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Namespace isolates different agents/experiments
+memory = Memory("customer-service-v2")
+
+# Store user context
+memory.set("user:john:preferences", {
+    "notification_method": "email",
+    "language": "en",
+    "last_order": "ORD-12345"
+})
+
+# Retrieve in your Humanloop agent
+user_prefs = memory.get("user:john:preferences")
+print(f"John prefers: {user_prefs['notification_method']}")</code></pre>
+<h2>How It Works</h2>
+<p>The <code>Memory</code> class connects to BotWire's HTTP API at <code>botwire.dev</code>. No signup required, no API keys. Your data persists across Humanloop runs, local development, and production deployments.</p>
+<p><strong>Namespaces</strong> isolate different experiments. Use descriptive names like <code>"humanloop-exp-47"</code> or <code>"customer-agent-v3"</code>. Each namespace gets 1000 writes/day and 50MB storage on the free tier.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different experiments don't interfere
+exp_a = Memory("prompt-variant-a") 
+exp_b = Memory("prompt-variant-b")
+
+# Store complex objects (JSON-serializable)
+exp_a.set("conversation_state", {
+    "current_topic": "billing",
+    "escalation_level": 2,
+    "unresolved_issues": ["refund-pending"]
+})
+
+# List all keys in a namespace
+all_keys = exp_a.list_keys()
+print(f"Stored keys: {all_keys}")
+
+# Delete specific data
+exp_a.delete("temporary_session_data")</code></pre>
+<p><strong>Cross-process persistence</strong> means your memory survives Humanloop's execution environment. Whether you're testing locally, running in Humanloop's sandbox, or deploying to production, the same memory persists.</p>
+<p><strong>TTL support</strong> for temporary data:</p>
+<pre><code class="lang-python"># Auto-expire session data after 1 hour (3600 seconds)
+memory.set("session:temp-token", "abc123", ttl=3600)</code></pre>
+<h2>Framework Integration</h2>
+<p>BotWire includes ready-made adapters for popular agent frameworks used with Humanloop:</p>
+<p><strong>LangChain chat history:</strong></p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.memory import ConversationBufferMemory
+
+# Persistent chat history across Humanloop runs
+chat_history = BotWireChatHistory(session_id="user-42")
+memory = ConversationBufferMemory(
+    chat_memory=chat_history,
+    return_messages=True
+)
+
+# Your LangChain agent now remembers conversations
+# between Humanloop prompt iterations</code></pre>
+<p><strong>CrewAI memory tools:</strong></p>
+<pre><code class="lang-python">from botwire.memory import memory_tools
+
+# Get remember/recall/list_memory tools for CrewAI agents
+tools = memory_tools("sales-team-memory")
+
+# Your CrewAI agents can now:
+# - remember("client_budget", "$50k")  
+# - recall("client_budget")
+# - list_memory()</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector/semantic search</strong>: BotWire is key-value storage, not a vector database. Use Pinecone or Weaviate for embeddings.</li>
+<li><strong>High-frequency writes</strong>: Free tier allows 1000 writes/day. For heavy workloads, consider Redis or self-hosting.</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP API adds ~50-200ms. For ultra-low latency, use in-memory solutions.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not Redis or databases?</strong> Redis requires infrastructure setup and management. BotWire works immediately with zero configuration, perfect for Humanloop's rapid iteration workflow.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, unlimited reads, 50MB storage. No credit card, no trial expiration. Heavy users can self-host the open-source version.</p>
+<p><strong>What about data privacy?</strong> Data is stored on BotWire's servers. For sensitive data, self-host using the MIT-licensed code at <code>github.com/pmestre-Forge/signal-api</code> - it's a single FastAPI + SQLite service.</p>
+<h2>Get Started</h2>
+<p>Add persistent memory to your Humanloop agents in under 2 minutes. Your prompt iterations will finally match production behavior, leading to better agent performance and more reliable testing.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting guides: https://botwire.dev</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

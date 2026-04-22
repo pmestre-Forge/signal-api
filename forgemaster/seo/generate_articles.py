@@ -198,9 +198,11 @@ def render_html(article: dict) -> str:
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/{slug}.svg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="https://botwire.dev/og/{slug}.svg">
 <script type="application/ld+json">{json.dumps(jsonld)}</script>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}

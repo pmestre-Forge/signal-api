@@ -50,6 +50,17 @@
   <url><loc>https://botwire.dev/articles/ai-agent-evaluation</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://botwire.dev/articles/multi-tenant-ai-agent</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://botwire.dev/articles/ai-agent-scheduled-tasks</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/langfuse-plus-botwire</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/helicone-plus-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/portkey-gateway-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/arize-phoenix-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/braintrust-eval-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/humanloop-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/agentops-plus-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/browserbase-agent-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/e2b-code-agents-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/pydantic-graph-agents-memory</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://botwire.dev/articles/launch-post-i-killed-six-products</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://botwire.dev/articles/cookbook</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://botwire.dev/playground</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://botwire.dev/status</loc><changefreq>daily</changefreq><priority>0.6</priority></url>

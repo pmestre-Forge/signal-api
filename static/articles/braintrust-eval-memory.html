@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Braintrust Evals for Agents with Persistent State | BotWire</title>
+<meta name="description" content="Braintrust user evaluating agents whose output depends on accumulated memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="braintrust memory, agent eval state, braintrustdata agent, stateful eval">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/braintrust-eval-memory">
+<meta property="og:title" content="Braintrust Evals for Agents with Persistent State">
+<meta property="og:description" content="Braintrust user evaluating agents whose output depends on accumulated memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/braintrust-eval-memory">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://botwire.dev/og/braintrust-eval-memory.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Braintrust Evals for Agents with Persistent State">
+<meta name="twitter:description" content="Braintrust user evaluating agents whose output depends on accumulated memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="twitter:image" content="https://botwire.dev/og/braintrust-eval-memory.svg">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Braintrust Evals for Agents with Persistent State", "description": "Braintrust user evaluating agents whose output depends on accumulated memory. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/braintrust-eval-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/braintrust-eval-memory"}, "keywords": "braintrust memory, agent eval state, braintrustdata agent, stateful eval", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Braintrust Evals for Agents with Persistent State</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>When evaluating agents that maintain persistent state across conversations, standard Braintrust evals fall short because they can't track accumulated memory between test runs. Your agent might pass individual prompts but fail spectacularly when its memory state gets corrupted or inconsistent over multiple interactions.</p>
+<h2>The Stateful Agent Problem</h2>
+<p>Most agent evaluation frameworks treat each test case as isolated — perfect for stateless functions, broken for real agents. Your customer service bot remembers user preferences. Your coding assistant tracks project context. Your research agent builds knowledge over time.</p>
+<p>But when you run evals, each test starts with a blank slate. You can't verify that your agent correctly remembers a user's dietary restrictions from message 1 when handling their restaurant query in message 15. You can't test if your coding assistant maintains project state across multiple debugging sessions.</p>
+<p>The result? Agents that pass all your evals but fail in production when memory inconsistencies compound. A chatbot that forgets VIP customer status. A research agent that re-asks the same clarifying questions. State corruption that only surfaces after dozens of interactions.</p>
+<p>This happens because agent memory typically lives in ephemeral session storage or gets reset between eval runs, making it impossible to test realistic multi-turn scenarios with persistent context.</p>
+<h2>The Fix: Persistent Memory for Evals</h2>
+<p>Use BotWire Memory to give your agents persistent state that survives across eval runs, processes, and machines. This lets you write Braintrust evals that test real stateful behavior.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+import braintrust
+
+# Initialize persistent memory for your agent
+memory = Memory("agent-eval-v1")
+
+def stateful_agent(query, user_id):
+    # Get user context from persistent memory
+    context = memory.get(f"user:{user_id}") or {"preferences": [], "history": []}
+    
+    # Your agent logic here
+    response = generate_response(query, context)
+    
+    # Update memory with new state
+    context["history"].append({"query": query, "response": response})
+    memory.set(f"user:{user_id}", context)
+    
+    return response
+
+# Braintrust eval with persistent state
+@braintrust.eval
+def test_memory_retention():
+    # First interaction - agent learns preference
+    result1 = stateful_agent("I'm vegetarian", user_id="test-user-1")
+    
+    # Later interaction - should remember preference
+    result2 = stateful_agent("Suggest a restaurant", user_id="test-user-1")
+    
+    return {"remembers_preference": "vegetarian" in result2.lower()}</code></pre>
+<h2>How It Works</h2>
+<p>BotWire Memory provides a simple key-value store that persists across your entire eval suite. When you call <code>memory.set(key, value)</code>, that data lives at https://botwire.dev until you delete it. No signup, no API keys — just persistent state.</p>
+<p>The key insight: use consistent namespaces and keys across your eval runs. The namespace (<code>"agent-eval-v1"</code>) isolates your test data from production, while user-specific keys (<code>f"user:{user_id}"</code>) let you test multiple user scenarios in parallel.</p>
+<pre><code class="lang-python"># Advanced stateful eval patterns
+def test_conversation_continuity():
+    memory = Memory("conversation-eval")
+    user_id = "user-123"
+    
+    # Simulate multi-day conversation
+    day_1 = stateful_agent("Book me a flight to Tokyo", user_id)
+    day_2 = stateful_agent("Actually, change that to Osaka", user_id)
+    day_3 = stateful_agent("What's my current booking?", user_id)
+    
+    # Agent should remember the change from day 2
+    assert "osaka" in day_3.lower()
+    
+    # Clean up test data
+    memory.delete(f"user:{user_id}")</code></pre>
+<p>For cross-process testing, BotWire memory works seamlessly. Your eval runner can set up initial state, then test agents running in separate containers or machines. The HTTP-based backend means memory is shared automatically.</p>
+<p>List all keys in a namespace to debug state issues: <code>memory.keys()</code> returns everything stored. Set TTL for temporary test data: <code>memory.set(key, value, ttl_seconds=3600)</code> auto-expires after an hour.</p>
+<h2>LangChain Integration</h2>
+<p>If you're using LangChain agents, BotWire provides drop-in chat history that persists between eval runs:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.agents import AgentExecutor
+import braintrust
+
+@braintrust.eval
+def test_langchain_agent_memory():
+    # Persistent chat history across eval runs
+    history = BotWireChatHistory(session_id="eval-session-1")
+    
+    agent = create_your_langchain_agent(memory=history)
+    
+    # First conversation
+    response1 = agent.invoke({"input": "My name is Sarah"})
+    
+    # Later conversation - agent should remember
+    response2 = agent.invoke({"input": "What's my name?"})
+    
+    return {"remembers_name": "sarah" in response2["output"].lower()}</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<p>• <strong>Vector/semantic search</strong>: BotWire is key-value only. Use Pinecone, Weaviate, or Chroma for embeddings and similarity search.</p>
+<p>• <strong>High-throughput production</strong>: Free tier caps at 1000 writes/day per namespace. Consider self-hosting or Redis for production workloads.</p>
+<p>• <strong>Sub-millisecond latency</strong>: HTTP round-trips add ~50-200ms. For ultra-low latency, use in-memory stores like Redis.</p>
+<h2>FAQ</h2>
+<p><strong>Q: Why not just use Redis for eval memory?</strong> A: Redis requires setup, authentication, and infrastructure. BotWire works immediately with zero config. Perfect for evals, overkill for simple testing.</p>
+<p><strong>Q: Is this actually free?</strong> A: Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card, no trials. Revenue comes from enterprise self-hosting and higher-tier usage.</p>
+<p><strong>Q: What about data privacy?</strong> A: Your eval data hits our servers. For sensitive testing, self-host the open-source version (MIT license, single FastAPI + SQLite service).</p>
+<h2>Start Testing Stateful Agents</h2>
+<p>Stop letting memory bugs slip through your evals. Install BotWire and start testing agents with real persistent state.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full docs and self-hosting instructions at https://botwire.dev.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>
