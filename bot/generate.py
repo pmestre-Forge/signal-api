@@ -36,6 +36,11 @@ PRODUCT_ROTATION = [
         "focus": "AI agents don't know what time it is, what timezone you're in, or if markets are open. One API call returns: local time, DST, market hours across 10 exchanges, holidays, business hours. $0.005/call.",
         "endpoint": "GET /context?tz=Europe/Lisbon&country=PT",
     },
+    {
+        "name": "Agent Heartbeat Monitor",
+        "focus": "Is your AI agent alive? Track uptime with a one-liner: POST /heartbeat/{agent_id} every 60s. Get alive/degraded/dead status, uptime %, streak tracking. Free. Public profile page at /agent/{id}.",
+        "endpoint": "POST /heartbeat/{agent_id}",
+    },
 ]
 
 # Optional: use Anthropic for fresh content
