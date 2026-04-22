@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Long-Running AI Agents with Temporal + Memory | BotWire</title>
+<meta name="description" content="Backend engineer running Temporal workflows for AI agents that span hours or days. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta name="keywords" content="temporal ai, temporal agent memory, durable ai workflow, temporal llm">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/temporal-ai-agents-memory">
+<meta property="og:title" content="Long-Running AI Agents with Temporal + Memory">
+<meta property="og:description" content="Backend engineer running Temporal workflows for AI agents that span hours or days. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<meta property="og:url" content="https://botwire.dev/articles/temporal-ai-agents-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Long-Running AI Agents with Temporal + Memory">
+<meta name="twitter:description" content="Backend engineer running Temporal workflows for AI agents that span hours or days. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Long-Running AI Agents with Temporal + Memory", "description": "Backend engineer running Temporal workflows for AI agents that span hours or days. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoG", "url": "https://botwire.dev/articles/temporal-ai-agents-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/temporal-ai-agents-memory"}, "keywords": "temporal ai, temporal agent memory, durable ai workflow, temporal llm", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Long-Running AI Agents with Temporal + Memory</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your AI agents crash, restart, or get redeployed — and suddenly they can't remember what they were doing. You're running long-running Temporal workflows for AI agents that need persistent memory across restarts. Standard in-memory storage dies with the process, and you need something that survives infrastructure changes without complex database setup.</p>
+<h2>The Memory Loss Problem</h2>
+<p>When you build AI agents with Temporal workflows that run for hours or days, memory becomes critical. Your agent might be halfway through a complex task — analyzing documents, waiting for user input, or coordinating with external APIs — when your container restarts, Kubernetes reschedules your pod, or you deploy new code.</p>
+<p>Without persistent memory, your agent loses context:</p>
+<ul>
+<li>ChatGPT forgets the conversation history</li>
+<li>Multi-step workflows restart from scratch</li>
+<li>User preferences and learned behaviors vanish</li>
+<li>Cross-workflow data sharing breaks</li>
+</ul>
+<p>You could build Redis clusters or manage databases, but for simple agent memory, that's overkill. You need something that works immediately and survives process restarts without infrastructure complexity.</p>
+<h2>The Fix: BotWire Memory</h2>
+<p>Install BotWire and add persistent memory to your Temporal AI workflows in minutes:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's a working Temporal workflow with persistent agent memory:</p>
+<pre><code class="lang-python">from botwire import Memory
+import temporalio
+from temporalio import workflow, activity
+from datetime import timedelta
+
+@workflow.defn
+class AIAgentWorkflow:
+    @workflow.run
+    async def run(self, user_id: str, task: str) -&gt; str:
+        # Agent memory survives workflow restarts
+        memory = Memory(f"agent-{user_id}")
+        
+        # Remember the current task
+        memory.set("current_task", task)
+        memory.set("status", "started")
+        
+        # Execute long-running activities
+        result = await workflow.execute_activity(
+            analyze_task,
+            args=[user_id, task],
+            start_to_close_timeout=timedelta(hours=2)
+        )
+        
+        # Update memory with results
+        memory.set("status", "completed")
+        memory.set("result", result)
+        
+        return result
+
+@activity.defn
+async def analyze_task(user_id: str, task: str) -&gt; str:
+    memory = Memory(f"agent-{user_id}")
+    
+    # Access memory from any activity
+    current_status = memory.get("status", "unknown")
+    print(f"Agent status: {current_status}")
+    
+    # Your AI logic here
+    return f"Analysis complete for: {task}"</code></pre>
+<h2>How It Works</h2>
+<p>BotWire Memory is a persistent key-value store designed for agent memory. Each <code>Memory("namespace")</code> creates an isolated storage space that survives process restarts, container crashes, and deployments.</p>
+<p>The memory persists across Temporal workflow executions. If your workflow gets interrupted and replayed, your agent picks up exactly where it left off:</p>
+<pre><code class="lang-python">@workflow.defn
+class PersistentChatWorkflow:
+    @workflow.run
+    async def run(self, session_id: str, message: str) -&gt; str:
+        memory = Memory(f"chat-{session_id}")
+        
+        # Check if this is a returning conversation
+        conversation_count = memory.get("message_count", 0)
+        user_name = memory.get("user_name", "Unknown")
+        
+        # Update conversation state
+        memory.set("message_count", conversation_count + 1)
+        memory.set("last_message", message)
+        
+        if conversation_count == 0:
+            return f"Hello! I'm starting our conversation."
+        else:
+            return f"Welcome back {user_name}! This is message #{conversation_count + 1}"</code></pre>
+<p>You can list all stored keys, delete specific entries, or clear entire namespaces:</p>
+<pre><code class="lang-python">memory = Memory("agent-123")
+
+# List all stored keys
+all_keys = memory.list_keys()
+print(f"Stored keys: {all_keys}")
+
+# Delete specific memory
+memory.delete("temporary_data")
+
+# Memory automatically handles concurrent access across processes</code></pre>
+<h2>Temporal-Specific Patterns</h2>
+<p>For complex Temporal AI workflows, use memory to coordinate between activities and handle workflow continuations:</p>
+<pre><code class="lang-python">@workflow.defn
+class MultiStepAIWorkflow:
+    @workflow.run
+    async def run(self, agent_id: str, steps: list[str]) -&gt; dict:
+        memory = Memory(f"workflow-{agent_id}")
+        results = {}
+        
+        # Track progress through workflow steps
+        completed_steps = memory.get("completed_steps", [])
+        
+        for step in steps:
+            if step in completed_steps:
+                # Skip already completed steps on replay
+                results[step] = memory.get(f"result_{step}")
+                continue
+            
+            # Execute step
+            result = await workflow.execute_activity(
+                process_step,
+                args=[agent_id, step],
+                start_to_close_timeout=timedelta(minutes=30)
+            )
+            
+            # Persist result before continuing
+            memory.set(f"result_{step}", result)
+            completed_steps.append(step)
+            memory.set("completed_steps", completed_steps)
+            
+            results[step] = result
+        
+        return results</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search</strong>: BotWire isn't a vector database. Use Pinecone, Weaviate, or Chroma for embedding-based semantic search</li>
+<li><strong>High-throughput workloads</strong>: 1000 writes/day limit on free tier. For millions of operations, use Redis or dedicated databases</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP-based storage adds network overhead. Use in-memory caches for ultra-low latency requirements</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis?</strong> Redis requires setup, clustering for HA, and memory management. BotWire works instantly with zero configuration and has a free tier that covers most AI agent use cases.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes/day per namespace forever. That covers most agent workflows. Unlimited reads, 50MB storage per namespace. You can also self-host the open source version.</p>
+<p><strong>What about data privacy?</strong> All data is encrypted in transit. For sensitive workloads, self-host using the open source version — it's a single FastAPI service with SQLite.</p>
+<h2>Get Started</h2>
+<p>Add persistent memory to your Temporal AI agents in under 5 minutes. No signups, no API keys, just working agent memory that survives any restart.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Try it now at https://botwire.dev — your agents will thank you for remembering.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

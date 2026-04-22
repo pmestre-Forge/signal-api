@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testing AI Agents: Memory Fixtures and Replay | BotWire</title>
+<meta name="description" content="Engineer who wants deterministic tests for agents that depend on accumulated state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Auto">
+<meta name="keywords" content="ai agent testing, test ai memory, agent test fixtures, llm test harness, agent replay">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/ai-agent-testing">
+<meta property="og:title" content="Testing AI Agents: Memory Fixtures and Replay">
+<meta property="og:description" content="Engineer who wants deterministic tests for agents that depend on accumulated state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Auto">
+<meta property="og:url" content="https://botwire.dev/articles/ai-agent-testing">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Testing AI Agents: Memory Fixtures and Replay">
+<meta name="twitter:description" content="Engineer who wants deterministic tests for agents that depend on accumulated state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Auto">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Testing AI Agents: Memory Fixtures and Replay", "description": "Engineer who wants deterministic tests for agents that depend on accumulated state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Auto", "url": "https://botwire.dev/articles/ai-agent-testing", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/ai-agent-testing"}, "keywords": "ai agent testing, test ai memory, agent test fixtures, llm test harness, agent replay", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Testing AI Agents: Memory Fixtures and Replay</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Testing AI agents is notoriously hard because they accumulate state over time — conversations, learned facts, decisions that influence future behavior. When your agent "remembers" something from yesterday's conversation, how do you write a deterministic test for that? You need <strong>agent test fixtures</strong> that let you control exactly what the agent remembers, and <strong>agent replay</strong> capabilities to recreate scenarios. Here's how to build an <strong>llm test harness</strong> that actually works.</p>
+<h2>The Testing Problem</h2>
+<p>AI agents break traditional testing patterns because they're stateful. Your agent learns that "John prefers email over Slack" in conversation A, then uses that preference in conversation B three days later. When you write tests, you can't just mock the LLM calls — you need to control the entire memory state.</p>
+<p>Without proper <strong>ai agent testing</strong>, you get flaky tests that pass locally but fail in CI, or tests that only work when run in isolation. Worse, you can't reproduce bugs because you can't recreate the exact memory state that triggered the issue.</p>
+<pre><code class="lang-python"># This test will fail randomly
+def test_agent_prefers_email():
+    agent = MyAgent()
+    agent.process("John prefers email")
+    # ... 50 lines later, different test file ...
+    result = agent.decide_notification_method("John")
+    assert result == "email"  # Fails if memory was cleared</code></pre>
+<h2>The Fix</h2>
+<p>Install BotWire to get persistent, controllable memory for your <strong>test ai memory</strong> scenarios:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+import pytest
+
+class TestAgentMemory:
+    def setup_method(self):
+        # Each test gets isolated memory
+        self.memory = Memory(f"test-{pytest.current_test_id}")
+        self.memory.clear()  # Clean slate
+    
+    def test_remembers_user_preference(self):
+        # Set up test fixture
+        self.memory.set("user:john:preference", "email")
+        
+        # Test agent behavior
+        agent = MyAgent(memory=self.memory)
+        result = agent.decide_notification("john", "meeting reminder")
+        
+        assert result["method"] == "email"
+        assert "john" in result["recipient"]</code></pre>
+<h2>How It Works</h2>
+<p>The key insight is treating agent memory as a <strong>test fixture</strong>. Just like you'd mock a database, you pre-populate memory with known state before each test.</p>
+<p>BotWire gives you a persistent key-value store that survives process restarts — perfect for <strong>agent replay</strong> scenarios where you need to recreate complex state:</p>
+<pre><code class="lang-python">def test_conversation_replay(self):
+    # Recreate a specific conversation state
+    conversation_state = {
+        "messages": ["Hello", "I need help with Python", "Specifically async/await"],
+        "user_expertise": "beginner",
+        "last_topic": "concurrency",
+        "clarification_count": 2
+    }
+    
+    for key, value in conversation_state.items():
+        self.memory.set(f"session:abc123:{key}", value)
+    
+    # Now test how agent handles next message
+    agent = MyAgent(memory=self.memory, session="abc123")
+    response = agent.process("What's the difference between async and threading?")
+    
+    # Should give beginner-friendly answer since it knows user_expertise
+    assert "beginner" in response.tone_markers</code></pre>
+<p>For cross-process testing (like testing agent handoffs between services), memory persists automatically:</p>
+<pre><code class="lang-python">def test_agent_handoff(self):
+    # First agent stores research findings
+    researcher = ResearchAgent(Memory("handoff-test"))
+    researcher.research("climate change impacts")
+    
+    # Second agent (different process) picks up where first left off  
+    writer = WriterAgent(Memory("handoff-test"))  # Same namespace
+    article = writer.write_summary()
+    
+    # Writer should have access to researcher's findings
+    assert len(article.sources) &gt; 0</code></pre>
+<h2>Framework Integration</h2>
+<p>BotWire integrates directly with popular agent frameworks. For LangChain agents, use the chat history adapter:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.agents import AgentExecutor
+import pytest
+
+def test_langchain_agent_memory():
+    # Controlled chat history for testing
+    chat_history = BotWireChatHistory(session_id="test-session-456")
+    
+    # Pre-populate conversation context
+    chat_history.add_user_message("My name is Sarah and I'm a data scientist")
+    chat_history.add_ai_message("Nice to meet you Sarah! I'll remember you work in data science.")
+    
+    # Test agent with this context
+    agent = create_langchain_agent(memory=chat_history)
+    result = agent.run("What kind of work do I do?")
+    
+    assert "data scientist" in result.lower()
+    assert "sarah" in result.lower()</code></pre>
+<p>For CrewAI, you get memory tools that agents can use in tests:</p>
+<pre><code class="lang-python">from botwire.memory import memory_tools
+
+def test_crew_shared_memory():
+    tools = memory_tools("test-crew-ns")
+    
+    # Agent 1 stores finding
+    remember_tool = tools[0]  # remember tool
+    remember_tool.run("customer_pain_point:slow_checkout")
+    
+    # Agent 2 recalls it
+    recall_tool = tools[1]  # recall tool  
+    finding = recall_tool.run("customer_pain_point")
+    
+    assert finding == "slow_checkout"</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector search</strong>: BotWire is key-value only. Use Pinecone/Weaviate for semantic similarity.</li>
+<li><strong>High throughput</strong>: 1000 writes/day free tier. For millions of operations, use Redis.</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP API adds ~50ms. Use in-memory stores for real-time systems.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis for testing?</strong> Redis requires setup, auth, and doesn't persist by default. BotWire works immediately with zero config and gives you 1000 writes/day free forever.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes/day per namespace, 50MB storage, unlimited reads. No credit card, no signup. Open source MIT license if you want to self-host.</p>
+<p><strong>What about data privacy?</strong> Data stays in your namespace (isolated by default). Self-host the FastAPI service if you need on-premise. All data is yours.</p>
+<h2>Get Started</h2>
+<p>Stop writing flaky agent tests. Get deterministic <strong>ai agent testing</strong> with proper memory fixtures.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting guide at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

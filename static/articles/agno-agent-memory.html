@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persistent Memory for Agno (formerly Phidata) Agents | BotWire</title>
+<meta name="description" content="Agno/Phidata user needing memory that survives across agent runs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta name="keywords" content="agno memory, phidata memory, agno persistent agent, phidata state">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/agno-agent-memory">
+<meta property="og:title" content="Persistent Memory for Agno (formerly Phidata) Agents">
+<meta property="og:description" content="Agno/Phidata user needing memory that survives across agent runs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<meta property="og:url" content="https://botwire.dev/articles/agno-agent-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Persistent Memory for Agno (formerly Phidata) Agents">
+<meta name="twitter:description" content="Agno/Phidata user needing memory that survives across agent runs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Persistent Memory for Agno (formerly Phidata) Agents", "description": "Agno/Phidata user needing memory that survives across agent runs. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, AutoGen.", "url": "https://botwire.dev/articles/agno-agent-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/agno-agent-memory"}, "keywords": "agno memory, phidata memory, agno persistent agent, phidata state", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Persistent Memory for Agno (formerly Phidata) Agents</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Your Agno (formerly Phidata) agents lose their memory every time they restart. Conversations, learned preferences, and accumulated context vanish when the process dies. This breaks multi-session workflows and forces users to repeat themselves. BotWire Memory solves this with persistent key-value storage that survives restarts, process crashes, and machine reboots.</p>
+<h2>The Problem: Agent Memory Dies with the Process</h2>
+<p>Agno agents store state in Python variables and objects that exist only in RAM. When your agent process terminates—whether from a crash, deployment, or simple restart—all accumulated memory disappears.</p>
+<p>Here's what breaks:</p>
+<ul>
+<li><strong>Conversation continuity</strong>: Users must re-introduce themselves after every restart</li>
+<li><strong>Learning persistence</strong>: Agents forget user preferences and behavioral patterns</li>
+<li><strong>Cross-session context</strong>: Multi-turn workflows reset to zero</li>
+<li><strong>State coordination</strong>: Multiple agent instances can't share learned information</li>
+</ul>
+<p>The core issue is that phidata memory exists only in the current Python process. Standard solutions like pickle files or JSON dumps are fragile, don't handle concurrency, and break in distributed environments. You need persistent agent memory that works across processes and machines.</p>
+<h2>The Fix: Persistent Memory in 3 Lines</h2>
+<p>Install BotWire Memory and replace in-memory storage with persistent key-value operations:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<pre><code class="lang-python">from botwire import Memory
+
+# Create persistent memory namespace
+memory = Memory("agent-session-123")
+
+# Store and retrieve across restarts  
+memory.set("user_name", "Sarah")
+memory.set("preferred_model", "gpt-4")
+
+# Works after process restart
+name = memory.get("user_name")  # "Sarah"
+model = memory.get("preferred_model", "gpt-3.5-turbo")  # fallback default</code></pre>
+<p>This creates persistent agno memory that survives process restarts, deployments, and crashes.</p>
+<h2>How Persistent Memory Works</h2>
+<p>BotWire Memory operates as a persistent key-value store with HTTP backend. Each namespace acts as an isolated memory space for your agents.</p>
+<h3>Basic Operations</h3>
+<pre><code class="lang-python">from botwire import Memory
+
+# Namespace isolates different agents/users
+user_memory = Memory("user-42")
+agent_memory = Memory("assistant-v2")
+
+# Store any JSON-serializable data
+user_memory.set("conversation_history", [
+    {"role": "user", "content": "What's the weather?"},
+    {"role": "assistant", "content": "I'll check that for you."}
+])
+
+# Retrieve with defaults
+history = user_memory.get("conversation_history", [])
+last_topic = user_memory.get("last_topic", "general")
+
+# List all keys in namespace
+all_keys = user_memory.list_keys()
+print(f"Stored keys: {all_keys}")
+
+# Delete specific memories
+user_memory.delete("temporary_data")</code></pre>
+<h3>Real-World Patterns</h3>
+<p>The most common pattern is user-scoped persistent memory. Create one namespace per user session:</p>
+<pre><code class="lang-python">class PersistentAgent:
+    def __init__(self, user_id):
+        self.memory = Memory(f"user-{user_id}")
+        self.user_id = user_id
+    
+    def remember_preference(self, key, value):
+        preferences = self.memory.get("preferences", {})
+        preferences[key] = value
+        self.memory.set("preferences", preferences)
+    
+    def get_context(self):
+        return {
+            "preferences": self.memory.get("preferences", {}),
+            "history": self.memory.get("conversation_history", []),
+            "session_count": self.memory.get("session_count", 0)
+        }
+    
+    def increment_session(self):
+        count = self.memory.get("session_count", 0)
+        self.memory.set("session_count", count + 1)</code></pre>
+<p>Memory persists across different processes and machines. Multiple agent instances can share the same namespace for coordinated memory.</p>
+<h2>Integration with Agno Agents</h2>
+<p>Integrate persistent memory directly into your Agno agent workflows:</p>
+<pre><code class="lang-python">from phi.agent import Agent
+from botwire import Memory
+
+class PersistentAgnoAgent:
+    def __init__(self, user_id, model="gpt-4"):
+        self.user_id = user_id
+        self.memory = Memory(f"agno-user-{user_id}")
+        
+        # Initialize agent with persistent context
+        self.agent = Agent(
+            model=model,
+            system_prompt=self._build_system_prompt()
+        )
+    
+    def _build_system_prompt(self):
+        context = self.memory.get("user_context", {})
+        base_prompt = "You are a helpful assistant."
+        
+        if context:
+            base_prompt += f"\n\nUser context: {context}"
+            
+        return base_prompt
+    
+    def chat(self, message):
+        # Get conversation history
+        history = self.memory.get("conversation_history", [])
+        
+        # Add user message
+        history.append({"role": "user", "content": message})
+        
+        # Get response from agent
+        response = self.agent.run(message)
+        
+        # Store response
+        history.append({"role": "assistant", "content": response.content})
+        self.memory.set("conversation_history", history[-20:])  # Keep last 20 messages
+        
+        return response
+    
+    def learn_preference(self, key, value):
+        context = self.memory.get("user_context", {})
+        context[key] = value
+        self.memory.set("user_context", context)</code></pre>
+<p>This pattern maintains phidata state across agent restarts while preserving conversation flow and learned preferences.</p>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't the right solution for:</p>
+<ul>
+<li><strong>Vector embeddings and semantic search</strong> — Use Pinecone, Weaviate, or ChromaDB for similarity search and RAG workflows</li>
+<li><strong>High-throughput applications</strong> — The HTTP API adds latency; use Redis or in-memory solutions for microsecond response times</li>
+<li><strong>Large binary data</strong> — 50MB namespace limit makes it unsuitable for storing files, images, or large datasets</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Q: Why not just use Redis or a database?</strong> A: BotWire requires zero setup—no servers, no configuration, no connection strings. It's designed specifically for agent memory patterns with built-in namespacing and JSON serialization.</p>
+<p><strong>Q: Is this actually free?</strong> A: Yes, 1000 writes per day per namespace, forever. 50MB storage per namespace. Unlimited reads. No signup required, no API keys, no credit card.</p>
+<p><strong>Q: What about data privacy?</strong> A: Data is stored on BotWire servers. For sensitive applications, self-host the open source version (MIT license) using the FastAPI + SQLite service at github.com/pmestre-Forge/signal-api.</p>
+<p>---</p>
+<p>Stop losing agent memory on every restart. Install BotWire Memory and build persistent agno agents that remember across sessions: <code>pip install botwire</code>. Get started at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

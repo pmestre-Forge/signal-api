@@ -1,5 +1,11 @@
 # BotWire
 
+[![PyPI version](https://img.shields.io/pypi/v/botwire.svg)](https://pypi.org/project/botwire/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Website](https://img.shields.io/badge/website-botwire.dev-4CAF50)](https://botwire.dev)
+[![Downloads](https://static.pepy.tech/badge/botwire)](https://pepy.tech/project/botwire)
+[![GitHub stars](https://img.shields.io/github/stars/pmestre-Forge/signal-api?style=social)](https://github.com/pmestre-Forge/signal-api)
+
 **Persistent memory for AI agents. Two lines of code. Free tier.**
 
 ```bash

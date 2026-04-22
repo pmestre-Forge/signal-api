@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire Memory Playground — Try It Without Installing</title>
+<meta name="description" content="Try BotWire Memory in your browser. No signup, no install — just click and store real data against the live API.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://botwire.dev/playground">
+<meta property="og:title" content="BotWire Memory Playground">
+<meta property="og:description" content="Try persistent memory for AI agents without installing. Real API calls in your browser.">
+<meta property="og:url" content="https://botwire.dev/playground">
+<meta property="og:type" content="website">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.6;font-size:15px}
+nav{padding:15px 20px;border-bottom:1px solid #222}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+.c{max-width:900px;margin:0 auto;padding:30px 20px 60px}
+h1{color:#fff;font-size:2.1em;margin-bottom:10px;letter-spacing:-0.01em}
+.lede{color:#888;margin-bottom:25px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+.card{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px}
+.card h2{color:#fff;font-size:1.1em;margin-bottom:12px}
+input,textarea,button,select{font-family:inherit;font-size:14px;background:#1a1a1a;color:#e0e0e0;border:1px solid #2a2a2a;border-radius:6px;padding:10px 12px;width:100%;margin-bottom:8px}
+input:focus,textarea:focus{outline:none;border-color:#4CAF50}
+button{background:#4CAF50;color:#000;font-weight:600;cursor:pointer;border:none;margin-top:4px}
+button:hover{background:#45a049}
+button.ghost{background:transparent;color:#4CAF50;border:1px solid #4CAF50}
+button.ghost:hover{background:#1a3a1a}
+.out{background:#0d0d0d;border:1px solid #222;border-radius:6px;padding:12px;font-family:ui-monospace,Menlo,Monaco,Consolas,monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;min-height:40px;color:#8be9fd;margin-top:8px}
+.out.err{color:#ff6b6b}
+.pill{display:inline-block;background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-right:6px}
+code{background:#1a1a1a;color:#f1fa8c;padding:2px 6px;border-radius:4px;border:1px solid #222;font-size:0.9em}
+label{display:block;color:#999;font-size:0.85em;margin-bottom:4px}
+.note{background:#1a1a3a;border-left:3px solid #6C9FFF;padding:12px 16px;margin:20px 0;color:#aaa;font-size:0.92em;border-radius:0 6px 6px 0}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> &middot; <a href="/articles/">Guides</a> &middot; <a href="/articles/cookbook">Cookbook</a></nav>
+<div class="c">
+<h1>Playground</h1>
+<p class="lede">Try BotWire Memory directly — every button hits the real live API. No signup. <span class="pill">Free tier</span></p>
+
+<div class="note">
+  <strong>Your namespace:</strong> <code id="ns-display">loading...</code> — auto-generated per session. Nothing you store is secret; anyone who guesses your namespace can read it. For real apps, pick your own namespace in code.
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>SET</h2>
+    <label>Key</label>
+    <input id="set-key" placeholder="user_name" value="user_name">
+    <label>Value (string or JSON)</label>
+    <textarea id="set-val" rows="2" placeholder="Pedro">Pedro</textarea>
+    <button id="btn-set">mem.set(key, value)</button>
+    <div class="out" id="out-set">&nbsp;</div>
+  </div>
+
+  <div class="card">
+    <h2>GET</h2>
+    <label>Key</label>
+    <input id="get-key" placeholder="user_name" value="user_name">
+    <button id="btn-get">mem.get(key)</button>
+    <div class="out" id="out-get">&nbsp;</div>
+  </div>
+
+  <div class="card">
+    <h2>LIST</h2>
+    <p style="color:#888;margin-bottom:10px;font-size:0.9em">Show all keys in your namespace.</p>
+    <button id="btn-list">mem.keys()</button>
+    <div class="out" id="out-list">&nbsp;</div>
+  </div>
+
+  <div class="card">
+    <h2>DELETE</h2>
+    <label>Key</label>
+    <input id="del-key" placeholder="user_name" value="user_name">
+    <button id="btn-del" class="ghost">mem.delete(key)</button>
+    <div class="out" id="out-del">&nbsp;</div>
+  </div>
+</div>
+
+<h2 style="color:#fff;font-size:1.2em;margin:40px 0 12px">The equivalent Python</h2>
+<pre style="background:#141414;border:1px solid #262626;border-radius:10px;padding:16px;overflow-x:auto;margin:0 0 20px"><code style="background:none;color:#e0e0e0;border:none"># pip install botwire
+from botwire import Memory
+mem = Memory(<span id="code-ns">"your-namespace"</span>)
+mem.set("user_name", "Pedro")
+mem.get("user_name")  # "Pedro"</code></pre>
+
+<p style="color:#aaa">Same thing, same namespace, different language. Your playground edits are visible to this Python snippet if you run it.</p>
+
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://pypi.org/project/botwire/" style="color:#4CAF50">PyPI</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a></footer>
+</div>
+
+<script>
+const BASE = "https://botwire.dev";
+// Generate or restore a per-browser namespace
+function getNs() {
+  let ns = localStorage.getItem("botwire-playground-ns");
+  if (!ns) {
+    ns = "pg-" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("botwire-playground-ns", ns);
+  }
+  return ns;
+}
+const ns = getNs();
+document.getElementById("ns-display").textContent = ns;
+document.getElementById("code-ns").textContent = '"' + ns + '"';
+
+async function call(method, path, body) {
+  try {
+    const r = await fetch(BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const txt = await r.text();
+    try { return { ok: r.ok, status: r.status, body: JSON.parse(txt) }; }
+    catch { return { ok: r.ok, status: r.status, body: txt }; }
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+function show(id, r) {
+  const el = document.getElementById(id);
+  el.className = r.ok ? "out" : "out err";
+  el.textContent = r.error
+    ? `ERROR: ${r.error}`
+    : `${r.status} ${r.ok ? "OK" : "FAIL"}\n${typeof r.body === "string" ? r.body : JSON.stringify(r.body, null, 2)}`;
+}
+
+document.getElementById("btn-set").onclick = async () => {
+  const k = document.getElementById("set-key").value.trim();
+  const v = document.getElementById("set-val").value;
+  if (!k) return;
+  const r = await call("PUT", `/memory/${encodeURIComponent(ns)}/${encodeURIComponent(k)}`, { value: v });
+  show("out-set", r);
+};
+document.getElementById("btn-get").onclick = async () => {
+  const k = document.getElementById("get-key").value.trim();
+  if (!k) return;
+  const r = await call("GET", `/memory/${encodeURIComponent(ns)}/${encodeURIComponent(k)}`);
+  show("out-get", r);
+};
+document.getElementById("btn-list").onclick = async () => {
+  const r = await call("GET", `/memory/${encodeURIComponent(ns)}`);
+  show("out-list", r);
+};
+document.getElementById("btn-del").onclick = async () => {
+  const k = document.getElementById("del-key").value.trim();
+  if (!k) return;
+  const r = await call("DELETE", `/memory/${encodeURIComponent(ns)}/${encodeURIComponent(k)}`);
+  show("out-del", r);
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modal.com AI Agents with Persistent Memory | BotWire</title>
+<meta name="description" content="Modal user building agents on their serverless GPU platform who needs cross-run state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, A">
+<meta name="keywords" content="modal.com ai agent, modal memory, modal serverless ai state, modal labs agent">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/modal-ai-agent-memory">
+<meta property="og:title" content="Modal.com AI Agents with Persistent Memory">
+<meta property="og:description" content="Modal user building agents on their serverless GPU platform who needs cross-run state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, A">
+<meta property="og:url" content="https://botwire.dev/articles/modal-ai-agent-memory">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Modal.com AI Agents with Persistent Memory">
+<meta name="twitter:description" content="Modal user building agents on their serverless GPU platform who needs cross-run state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, A">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Modal.com AI Agents with Persistent Memory", "description": "Modal user building agents on their serverless GPU platform who needs cross-run state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, A", "url": "https://botwire.dev/articles/modal-ai-agent-memory", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/modal-ai-agent-memory"}, "keywords": "modal.com ai agent, modal memory, modal serverless ai state, modal labs agent", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Modal.com AI Agents with Persistent Memory</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Building AI agents on Modal's serverless GPU platform hits a wall when your agent needs to remember things between function calls. Modal functions are stateless by design — great for scaling, terrible for agent memory.</p>
+<h2>The Memory Problem on Modal</h2>
+<p>Modal.com spins up fresh containers for each function invocation. Your AI agent might have a brilliant conversation, learn user preferences, or build up context over multiple interactions, but the moment Modal scales down your container, that memory vanishes.</p>
+<p>This breaks agent workflows that depend on persistence:</p>
+<pre><code class="lang-python"># This agent forgets everything between Modal calls
+@modal.function()
+def chat_agent(user_message: str):
+    # Where did our conversation history go?
+    # What were the user's preferences?
+    # What tasks were we working on?
+    context = ???  # Lost in the void
+    return generate_response(user_message, context)</code></pre>
+<p>Your agent becomes a goldfish, starting fresh every time. Users repeat themselves. Context disappears. Multi-step reasoning falls apart. You need persistent memory that survives Modal's serverless lifecycle.</p>
+<h2>The Fix: BotWire Memory</h2>
+<p>Install BotWire to add persistent key-value memory to your Modal AI agents:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's a Modal agent that remembers across function calls:</p>
+<pre><code class="lang-python">import modal
+from botwire import Memory
+
+app = modal.App("persistent-agent")
+
+@app.function()
+def chat_agent(user_id: str, message: str):
+    # Each user gets isolated memory
+    memory = Memory(f"user-{user_id}")
+    
+    # Retrieve conversation history
+    history = memory.get("conversation") or []
+    history.append({"role": "user", "content": message})
+    
+    # Your AI logic here
+    response = generate_response(history)
+    history.append({"role": "assistant", "content": response})
+    
+    # Persist for next time
+    memory.set("conversation", history)
+    memory.set("last_seen", datetime.now().isoformat())
+    
+    return response</code></pre>
+<h2>How It Works</h2>
+<p>BotWire Memory is a persistent key-value store designed for agents. The <code>Memory("namespace")</code> constructor creates an isolated memory space — think of it as a Redis namespace that survives process restarts.</p>
+<pre><code class="lang-python">from botwire import Memory
+
+# Different namespaces = isolated memory
+user_memory = Memory("user-alice")
+session_memory = Memory("session-xyz")
+agent_memory = Memory("agent-research-bot")
+
+# Store any JSON-serializable data
+user_memory.set("preferences", {"language": "python", "style": "concise"})
+user_memory.set("task_progress", {"step": 3, "completed": ["research", "outline"]})
+
+# Retrieve with defaults
+prefs = user_memory.get("preferences", {})
+tasks = user_memory.get("active_tasks", [])</code></pre>
+<p>Memory persists across Modal function calls, container restarts, and even different machines. Your agent can pick up exactly where it left off.</p>
+<p>For complex state management, you can list all keys in a namespace and delete specific memories:</p>
+<pre><code class="lang-python"># See what's stored
+all_keys = memory.list_keys()  # Returns list of strings
+
+# Clean up old sessions
+memory.delete("temp_data")
+
+# Bulk operations for complex agents
+for key in memory.list_keys():
+    if key.startswith("cache_"):
+        memory.delete(key)</code></pre>
+<h2>Modal Integration Patterns</h2>
+<p>Here's a production pattern for a Modal AI agent with different memory scopes:</p>
+<pre><code class="lang-python">import modal
+from botwire import Memory
+from datetime import datetime, timedelta
+
+app = modal.App("multi-memory-agent")
+
+@app.function()
+def research_agent(user_id: str, query: str):
+    # User-specific long-term memory
+    user_memory = Memory(f"user-{user_id}")
+    
+    # Session-specific working memory  
+    session_id = user_memory.get("current_session") or f"session-{int(time.time())}"
+    session_memory = Memory(f"session-{session_id}")
+    
+    # Global agent knowledge
+    global_memory = Memory("research-agent-global")
+    
+    # Track user research interests over time
+    interests = user_memory.get("research_interests", [])
+    if query not in interests:
+        interests.append(query)
+        user_memory.set("research_interests", interests[-10])  # Keep recent 10
+    
+    # Build session context
+    session_context = session_memory.get("context", [])
+    session_context.append(f"User query: {query}")
+    
+    # Use global learnings
+    similar_queries = global_memory.get("query_patterns", {})
+    
+    # Your AI research logic here...
+    result = perform_research(query, session_context, similar_queries)
+    
+    # Update all memory layers
+    session_context.append(f"Research result: {result['summary']}")
+    session_memory.set("context", session_context)
+    session_memory.set("last_updated", datetime.now().isoformat())
+    
+    user_memory.set("current_session", session_id)
+    user_memory.set("last_research", query)
+    
+    # Learn globally (anonymized)
+    global_memory.set(f"pattern-{len(similar_queries)}", {
+        "query_type": classify_query(query),
+        "successful_approach": result['approach']
+    })
+    
+    return result</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<p>BotWire Memory isn't the right tool for:</p>
+<p>• <strong>Vector/semantic search</strong> — it's key-value storage, not a vector database. Use Pinecone or Weaviate for embeddings. • <strong>High-throughput caching</strong> — 1000 writes/day limit makes it unsuitable for request-level caching. Use Redis for that. • <strong>Sub-millisecond latency</strong> — HTTP API adds network overhead. Not suitable for real-time gaming or HFT applications.</p>
+<h2>FAQ</h2>
+<p><strong>Why not just use Redis or database connections in Modal?</strong> Managing Redis connections, handling failures, and provisioning infrastructure adds complexity. BotWire works immediately with zero setup — no connection strings, no credentials, no infrastructure.</p>
+<p><strong>Is this actually free?</strong> Yes. 1000 writes per day per namespace, 50MB storage per namespace, unlimited reads. No credit card required. The HTTP API at botwire.dev is free to use.</p>
+<p><strong>What about data privacy?</strong> BotWire is open source (MIT license) and you can self-host the FastAPI service. For production agents with sensitive data, run your own instance on your infrastructure.</p>
+<h2>Get Started</h2>
+<p>Add persistent memory to your Modal AI agents in one line. Install BotWire and your agents will remember everything that matters across serverless function calls.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Full documentation and self-hosting guide at <a href="https://botwire.dev">botwire.dev</a>.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

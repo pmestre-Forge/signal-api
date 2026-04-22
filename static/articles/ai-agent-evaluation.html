@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluating AI Agents Over Time: Memory as Ground Truth | BotWire</title>
+<meta name="description" content="ML engineer trying to benchmark agent quality across versions using persisted state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Aut">
+<meta name="keywords" content="agent evaluation, ai agent metrics, agent benchmarking, agent eval framework, langfuse alternative">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<link rel="canonical" href="https://botwire.dev/articles/ai-agent-evaluation">
+<meta property="og:title" content="Evaluating AI Agents Over Time: Memory as Ground Truth">
+<meta property="og:description" content="ML engineer trying to benchmark agent quality across versions using persisted state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Aut">
+<meta property="og:url" content="https://botwire.dev/articles/ai-agent-evaluation">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Evaluating AI Agents Over Time: Memory as Ground Truth">
+<meta name="twitter:description" content="ML engineer trying to benchmark agent quality across versions using persisted state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Aut">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Evaluating AI Agents Over Time: Memory as Ground Truth", "description": "ML engineer trying to benchmark agent quality across versions using persisted state. Drop-in solution with BotWire Memory. Free tier, open source, works with LangChain, CrewAI, Aut", "url": "https://botwire.dev/articles/ai-agent-evaluation", "datePublished": "2026-04-22", "dateModified": "2026-04-22", "author": {"@type": "Organization", "name": "BotWire"}, "publisher": {"@type": "Organization", "name": "BotWire", "url": "https://botwire.dev"}, "mainEntityOfPage": {"@type": "WebPage", "@id": "https://botwire.dev/articles/ai-agent-evaluation"}, "keywords": "agent evaluation, ai agent metrics, agent benchmarking, agent eval framework, langfuse alternative", "about": {"@type": "SoftwareApplication", "name": "BotWire Memory"}}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.7;font-size:17px}
+.c{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+nav{padding:15px 20px;border-bottom:1px solid #222;background:#0a0a0a;position:sticky;top:0}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+nav a:hover{text-decoration:underline}
+nav .pill{background:#1a3a1a;color:#4CAF50;padding:3px 10px;border-radius:20px;font-size:0.78em;margin-left:10px}
+h1{color:#fff;font-size:2.3em;line-height:1.2;margin-bottom:15px;letter-spacing:-0.01em}
+.lede{color:#888;font-size:0.95em;margin-bottom:30px}
+article h2{color:#fff;font-size:1.5em;margin:40px 0 12px;letter-spacing:-0.01em}
+article h3{color:#ddd;font-size:1.15em;margin:25px 0 10px}
+article p{margin:0 0 15px;color:#c5c5c5}
+article ul,article ol{margin:0 0 18px 22px;color:#c5c5c5}
+article li{margin-bottom:6px}
+article a{color:#4CAF50;text-decoration:none}
+article a:hover{text-decoration:underline}
+article code{background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:0.92em;color:#f1fa8c;border:1px solid #222}
+article pre{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px;overflow-x:auto;margin:20px 0;font-size:0.92em}
+article pre code{background:transparent;padding:0;border:none;color:#e0e0e0;white-space:pre}
+article strong{color:#eee}
+.cta{background:#1a3a1a;border:1px solid #4CAF50;border-radius:10px;padding:25px;margin:40px 0 20px;text-align:center}
+.cta a.btn{display:inline-block;background:#4CAF50;color:#000;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:10px;text-decoration:none}
+.cta a.btn:hover{background:#45a049;text-decoration:none}
+.cta code{background:#000;border:none;color:#4CAF50;font-size:1em;padding:3px 8px}
+.related{margin-top:50px;padding-top:25px;border-top:1px solid #222}
+.related h2{font-size:1.15em;color:#aaa;margin-bottom:12px}
+.related ul{list-style:none;margin:0}
+.related li{margin:6px 0}
+footer{margin-top:60px;padding-top:25px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> <span class="pill">Docs</span></nav>
+<div class="c">
+<article>
+<h1>Evaluating AI Agents Over Time: Memory as Ground Truth</h1>
+<p class="lede">Free &middot; Open source (MIT) &middot; Works with LangChain, CrewAI, AutoGen &middot; No signup</p>
+<p>Benchmarking AI agents across versions is broken without persistent memory. Your agent evaluation pipeline can't measure how well memory-dependent behaviors improve over time because everything resets between test runs. This is fixable with the right memory backend.</p>
+<h2>The Memory Gap in Agent Evaluation</h2>
+<p>Traditional agent benchmarking treats each test run in isolation. You test your agent on a conversation, measure metrics like accuracy or task completion, then restart fresh for the next test. But real agents accumulate knowledge — they remember user preferences, learn from mistakes, and build context over multiple interactions.</p>
+<p>This creates a massive blind spot in agent eval frameworks. When you're comparing Agent v1.2 to v1.3, you want to know: "Does the new version better utilize accumulated knowledge?" Without persistent memory, you're only measuring cold-start performance, not the agent's ability to improve with experience.</p>
+<p>The result? You ship agents that test well in isolation but perform poorly in production where memory matters. Your evaluation metrics don't correlate with real-world success because you're missing the memory layer entirely.</p>
+<h2>The Fix: Memory-Backed Agent Evaluation</h2>
+<p>Install BotWire for persistent agent memory that survives process restarts:</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Here's how to benchmark agents with persistent memory:</p>
+<pre><code class="lang-python">from botwire import Memory
+import time
+
+def evaluate_agent_with_memory(agent_version, test_scenarios):
+    # Each agent version gets its own memory namespace
+    memory = Memory(f"agent-eval-{agent_version}")
+    
+    results = []
+    for scenario in test_scenarios:
+        # Agent can read from previous interactions
+        context = memory.get("user_preferences") or {}
+        learned_patterns = memory.get("conversation_patterns") or []
+        
+        # Run your agent with persistent context
+        response = run_agent(scenario, context, learned_patterns)
+        
+        # Agent writes back learnings
+        memory.set("last_interaction", {
+            "scenario": scenario["id"],
+            "response": response,
+            "timestamp": time.time()
+        })
+        
+        # Update accumulated knowledge
+        updated_patterns = learned_patterns + [response.pattern]
+        memory.set("conversation_patterns", updated_patterns)
+        
+        results.append(evaluate_response(response, scenario))
+    
+    return results</code></pre>
+<h2>Understanding Memory-Based Evaluation</h2>
+<p>The key insight is treating memory as ground truth for agent improvement. Each test run builds on previous interactions, letting you measure how well your agent learns and adapts.</p>
+<p>Here's a more complete evaluation framework:</p>
+<pre><code class="lang-python">from botwire import Memory
+from datetime import datetime, timedelta
+
+class AgentEvaluator:
+    def __init__(self, agent_version):
+        self.memory = Memory(f"eval-{agent_version}")
+        self.metrics = []
+    
+    def run_benchmark_suite(self, scenarios, days_to_simulate=30):
+        """Simulate agent behavior over time with memory persistence"""
+        
+        for day in range(days_to_simulate):
+            daily_scenarios = scenarios[day * 10:(day + 1) * 10]  # 10 per day
+            
+            for scenario in daily_scenarios:
+                # Check if we've seen this user before
+                user_id = scenario["user_id"]
+                user_history = self.memory.get(f"user:{user_id}") or {"interactions": 0, "preferences": {}}
+                
+                # Agent response informed by memory
+                response = self.generate_response(scenario, user_history)
+                
+                # Update user memory
+                user_history["interactions"] += 1
+                user_history["last_seen"] = datetime.now().isoformat()
+                if "preference_update" in response:
+                    user_history["preferences"].update(response["preference_update"])
+                
+                self.memory.set(f"user:{user_id}", user_history)
+                
+                # Track metrics over time
+                self.metrics.append({
+                    "day": day,
+                    "scenario_id": scenario["id"],
+                    "accuracy": response["accuracy"],
+                    "personalization_score": self.calculate_personalization(user_history),
+                    "memory_utilization": len(str(user_history))
+                })
+    
+    def get_memory_keys(self):
+        """Inspect what the agent has learned"""
+        # Note: BotWire doesn't expose key listing in current API
+        # Track keys manually or use a known key pattern
+        return ["Key listing not available in current API"]</code></pre>
+<p>The beauty of this approach is that your benchmarks become stateful. You can measure not just "does the agent answer correctly" but "does the agent get better at answering as it learns more about users?"</p>
+<h2>Integration with Agent Frameworks</h2>
+<p>For LangChain agents, use the chat history adapter:</p>
+<pre><code class="lang-python">from botwire import BotWireChatHistory
+from langchain.agents import create_openai_functions_agent
+from langchain_openai import ChatOpenAI
+
+def evaluate_langchain_agent(agent_prompt, test_conversations):
+    results = []
+    
+    for conversation in test_conversations:
+        # Persistent chat history across evaluations
+        chat_history = BotWireChatHistory(session_id=f"eval-{conversation['id']}")
+        
+        # Create agent with persistent memory
+        llm = ChatOpenAI(model="gpt-4")
+        agent = create_openai_functions_agent(llm, tools=[], prompt=agent_prompt)
+        
+        # Run conversation with memory
+        for turn in conversation["turns"]:
+            response = agent.invoke({
+                "input": turn["user_message"],
+                "chat_history": chat_history.messages
+            })
+            
+            # History automatically persists via BotWire
+            chat_history.add_user_message(turn["user_message"])
+            chat_history.add_ai_message(response["output"])
+            
+            results.append(evaluate_turn(response, turn))
+    
+    return results</code></pre>
+<h2>When NOT to Use BotWire</h2>
+<ul>
+<li><strong>Vector/semantic search</strong>: BotWire is key-value storage, not a vector database. Use Pinecone/Weaviate for embedding-based retrieval.</li>
+<li><strong>High-frequency writes</strong>: Free tier caps at 1000 writes/day per namespace. For high-throughput evaluation, consider self-hosting.</li>
+<li><strong>Sub-millisecond latency</strong>: HTTP calls add ~10-50ms overhead. For ultra-low latency, use in-memory solutions during evaluation.</li>
+</ul>
+<h2>FAQ</h2>
+<p><strong>Why not Redis for agent evaluation?</strong> Redis requires setup, authentication, and doesn't persist by default. BotWire works immediately with zero config and built-in persistence.</p>
+<p><strong>Is this actually free?</strong> Yes, 1000 writes/day per namespace forever. Unlimited reads. No credit card, no API keys, no gotchas.</p>
+<p><strong>What about data privacy?</strong> All data is yours. Open source (MIT license) means you can self-host the entire stack. No vendor lock-in.</p>
+<h2>Start Benchmarking Agent Memory Today</h2>
+<p>Memory-based evaluation reveals how your agents actually improve over time, not just cold-start performance.</p>
+<pre><code class="lang-bash">pip install botwire</code></pre>
+<p>Get started at https://botwire.dev — no signup required.</p>
+<div class="cta">
+<p>Install in one command:</p>
+<p style="margin-top:10px"><code>pip install botwire</code></p>
+<a class="btn" href="https://botwire.dev">Start free at botwire.dev</a>
+</div>
+</article>
+<div class="related">
+<h2>Related guides</h2>
+<ul>
+<li>&rarr; <a href="/articles/langchain-persistent-memory">How to Add Persistent Memory to LangChain Agents</a></li>
+<li>&rarr; <a href="/articles/crewai-agent-memory">Persistent Memory for CrewAI Agents</a></li>
+<li>&rarr; <a href="/articles/why-ai-agents-forget">Why AI Agents Forget (And How to Fix It)</a></li>
+<li>&rarr; <a href="/articles/ai-agent-memory-vs-redis">BotWire Memory vs Redis vs Vector DBs</a></li>
+<li>&rarr; <a href="/articles/">All articles</a></li>
+</ul>
+</div>
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://github.com/pmestre-Forge/signal-api" style="color:#4CAF50">GitHub</a> &middot; MIT</footer>
+</div>
+</body>
+</html>

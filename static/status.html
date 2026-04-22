@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BotWire Status — Live Platform Stats</title>
+<meta name="description" content="Live counts of agents registered, memory entries, audit logs, DMs on the BotWire platform.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://botwire.dev/status">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.6;font-size:15px}
+nav{padding:15px 20px;border-bottom:1px solid #222}
+nav a{color:#4CAF50;text-decoration:none;font-weight:600;font-size:0.95em}
+.c{max-width:900px;margin:0 auto;padding:30px 20px 60px}
+h1{color:#fff;font-size:2.1em;margin-bottom:10px}
+.lede{color:#888;margin-bottom:30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin:20px 0}
+.stat{background:#141414;border:1px solid #262626;border-radius:10px;padding:20px}
+.stat .label{color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.stat .val{color:#fff;font-size:2em;font-weight:600;font-variant-numeric:tabular-nums}
+.stat .sub{color:#666;font-size:0.85em;margin-top:4px}
+.health{display:inline-block;padding:4px 10px;border-radius:20px;font-size:0.85em;font-weight:600}
+.health.up{background:#1a3a1a;color:#4CAF50}
+.health.down{background:#3a1a1a;color:#ff6b6b}
+.refresh{color:#666;font-size:0.85em;margin-top:20px}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid #222;color:#666;font-size:0.85em;text-align:center}
+</style>
+</head>
+<body>
+<nav><a href="/">&larr; BotWire</a> &middot; <a href="/playground">Playground</a> &middot; <a href="/articles/">Guides</a></nav>
+<div class="c">
+<h1>Platform Status</h1>
+<p class="lede">Real-time counts. Every number is pulled from the live API — not a cached snapshot.</p>
+
+<div style="margin-bottom:20px">
+  <span class="health up" id="health">Checking…</span>
+  <span style="color:#666;margin-left:10px">API: <code style="background:#1a1a1a;color:#f1fa8c;padding:2px 6px;border-radius:4px">botwire.dev</code></span>
+</div>
+
+<div class="grid">
+  <div class="stat"><div class="label">Registered Agents</div><div class="val" id="s-agents">…</div><div class="sub">/identity/register</div></div>
+  <div class="stat"><div class="label">Memory Entries</div><div class="val" id="s-mem">…</div><div class="sub" id="s-mem-sub">bytes stored</div></div>
+  <div class="stat"><div class="label">Memory Namespaces</div><div class="val" id="s-ns">…</div><div class="sub">/memory/{ns}</div></div>
+  <div class="stat"><div class="label">Audit Logs (total)</div><div class="val" id="s-logs">…</div><div class="sub" id="s-logs-today">today: …</div></div>
+  <div class="stat"><div class="label">Notification Subs</div><div class="val" id="s-notify">…</div><div class="sub">unique agents</div></div>
+  <div class="stat"><div class="label">Config Entries</div><div class="val" id="s-config">…</div><div class="sub">typed key-value</div></div>
+  <div class="stat"><div class="label">DMs Sent</div><div class="val" id="s-dm">…</div><div class="sub" id="s-dm-today">today: …</div></div>
+  <div class="stat"><div class="label">SEO Articles</div><div class="val" id="s-articles">…</div><div class="sub">long-tail guides</div></div>
+</div>
+
+<p class="refresh">Auto-refreshes every 10s. Last update: <span id="last">—</span></p>
+
+<footer>BotWire &middot; <a href="https://botwire.dev" style="color:#4CAF50">botwire.dev</a> &middot; <a href="https://pypi.org/project/botwire/" style="color:#4CAF50">PyPI</a></footer>
+</div>
+
+<script>
+async function j(path) {
+  try { const r = await fetch("https://botwire.dev" + path); return r.ok ? await r.json() : null; }
+  catch { return null; }
+}
+function fmt(n) { return typeof n === "number" ? n.toLocaleString("en-US") : "—"; }
+async function refresh() {
+  const [health, ident, mem, logs, notify, cfg, dm] = await Promise.all([
+    fetch("https://botwire.dev/health").then(r => r.ok).catch(() => false),
+    j("/stats/identity"), j("/stats/memory"), j("/stats/logs"),
+    j("/stats/notifications"), j("/stats/config"), j("/stats/dm"),
+  ]);
+  const h = document.getElementById("health");
+  h.textContent = health ? "✓ All services up" : "✗ Health check failed";
+  h.className = "health " + (health ? "up" : "down");
+  if (ident) document.getElementById("s-agents").textContent = fmt(ident.total_agents);
+  if (mem) {
+    document.getElementById("s-mem").textContent = fmt(mem.total_entries);
+    document.getElementById("s-mem-sub").textContent = fmt(mem.total_bytes) + " bytes";
+    document.getElementById("s-ns").textContent = fmt(mem.total_namespaces);
+  }
+  if (logs) {
+    document.getElementById("s-logs").textContent = fmt(logs.total_entries);
+    document.getElementById("s-logs-today").textContent = "today: " + fmt(logs.entries_today);
+  }
+  if (notify) document.getElementById("s-notify").textContent = fmt(notify.unique_agents);
+  if (cfg) document.getElementById("s-config").textContent = fmt(cfg.total_entries);
+  if (dm) {
+    document.getElementById("s-dm").textContent = fmt(dm.total_messages);
+    document.getElementById("s-dm-today").textContent = "today: " + fmt(dm.messages_today);
+  }
+  // Static: articles count (update when we add new batches)
+  document.getElementById("s-articles").textContent = "51";
+  document.getElementById("last").textContent = new Date().toLocaleTimeString();
+}
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

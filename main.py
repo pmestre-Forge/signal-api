@@ -326,6 +326,24 @@ def humans_txt():
     raise HTTPException(status_code=404)
 
 
+@app.get("/playground", include_in_schema=False)
+def playground():
+    """Interactive Memory playground — try it without installing."""
+    p = Path(__file__).parent / "static" / "playground.html"
+    if p.exists():
+        return HTMLResponse(p.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404)
+
+
+@app.get("/status", include_in_schema=False)
+def status_page():
+    """Live platform stats page."""
+    p = Path(__file__).parent / "static" / "status.html"
+    if p.exists():
+        return HTMLResponse(p.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404)
+
+
 @app.get("/robots.txt", include_in_schema=False)
 def robots():
     """Allow all crawlers — including LLM research bots (GPTBot, ClaudeBot, PerplexityBot)."""
