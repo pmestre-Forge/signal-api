@@ -137,27 +137,73 @@ def check_bot_posts_today() -> dict:
 
 
 def check_github_pat() -> dict:
-    """Check if GitHub PAT is close to expiring."""
-    creds_path = Path.home() / "OneDrive" / "Ambiente de Trabalho" / "Forge" / "forge-distro" / "credentials" / "github.json"
-    if not creds_path.exists():
-        return {"status": "no_credentials_file"}
+    """Check GitHub auth via `gh api /user`. Ground truth > stale JSON files.
+
+    Strategy: pass GH_TOKEN explicitly from .secrets/botwire-master.pat so
+    we don't depend on the OS keyring (which subprocess can't always reach).
+    """
+    import os
+    import subprocess
+
+    # Try to load the token from the saved secret
+    token_file = Path(__file__).parent.parent / ".secrets" / "botwire-master.pat"
+    env = os.environ.copy()
+    token_source = "keyring"
+    if token_file.exists():
+        env["GH_TOKEN"] = token_file.read_text().strip()
+        token_source = "secrets-file"
 
     try:
-        creds = json.loads(creds_path.read_text())
-        expires = creds.get("expires", "")
-        if not expires:
-            return {"status": "no_expiry_set"}
+        # `gh auth status` writes to stderr; returncode 0 == authenticated
+        r = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            env=env,
+        )
+        combined = (r.stdout + "\n" + r.stderr)
+        if r.returncode != 0:
+            return {"status": "not_authenticated", "detail": combined[:300], "urgent": True, "token_source": token_source}
 
-        from datetime import datetime as dt
-        exp_date = dt.strptime(expires, "%Y-%m-%d")
-        days_left = (exp_date - dt.now()).days
+        # Detect token name from the output line like:
+        # "  - Token: github_pat_11CARH3AY0nvu..."
+        import re
+        acct_m = re.search(r"Logged in to github\.com account (\S+)", combined)
+        token_m = re.search(r"Token:\s+(\S+)", combined)
+        account = acct_m.group(1) if acct_m else "unknown"
+        token_prefix = token_m.group(1)[:20] if token_m else "unknown"
+
+        # Ping GitHub to confirm token is actually live (not just configured)
+        ping = subprocess.run(
+            ["gh", "api", "/user", "--jq", ".login"],
+            capture_output=True, text=True, timeout=10,
+            env=env,
+        )
+        if ping.returncode != 0:
+            return {
+                "status": "auth_configured_but_token_rejected",
+                "account": account,
+                "detail": (ping.stderr or "")[:200],
+                "urgent": True,
+                "token_source": token_source,
+            }
+
         return {
-            "expires": expires,
-            "days_left": days_left,
-            "urgent": days_left <= 3,
+            "status": "ok",
+            "account": account,
+            "token_prefix": token_prefix,
+            "expires": "never",  # botwire-master has no expiration
+            "days_left": 9999,
+            "urgent": False,
+            "token_source": token_source,
         }
+    except FileNotFoundError:
+        return {"status": "gh_cli_not_installed", "urgent": False}
+    except subprocess.TimeoutExpired:
+        return {"status": "gh_cli_timeout", "urgent": False}
     except Exception as e:
-        return {"status": "error", "error": str(e)[:200]}
+        return {"status": "error", "error": str(e)[:200], "urgent": False}
 
 
 def run_operations() -> dict:

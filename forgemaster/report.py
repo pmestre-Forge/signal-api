@@ -49,12 +49,16 @@ def build_report(ops_report: dict, intel_entry: str) -> dict:
         f"  Total posts all time: {posts.get('total_posts', 0)}",
         f"",
         f"--- GITHUB PAT ---",
+        f"  Status: {pat.get('status', 'unknown')}",
+        f"  Account: {pat.get('account', '?')}",
         f"  Expires: {pat.get('expires', 'unknown')}",
-        f"  Days left: {pat.get('days_left', '?')}",
     ]
+    if pat.get("token_prefix"):
+        body_lines.append(f"  Token: {pat['token_prefix']}...")
 
     if pat.get("urgent"):
-        body_lines.append(f"  *** URGENT: PAT expires in {pat['days_left']} days. Renew at github.com ***")
+        reason = pat.get("status", "check required")
+        body_lines.append(f"  *** URGENT: GitHub auth problem — {reason}. Run `gh auth status` ***")
 
     body_lines.extend([
         f"",
