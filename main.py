@@ -34,6 +34,7 @@ from notifications import subscribe, check_alerts, list_subscriptions, cancel_su
 from config_store import config_set, config_get, config_delete, config_list, config_export, config_import, config_stats, VALID_TYPES as CONFIG_TYPES
 from dm import send_dm, get_inbox, get_thread, dm_global_stats
 from heartbeat import record_heartbeat, get_status as heartbeat_get_status, heartbeat_platform_stats
+from budget import record_usage, set_limits, get_usage, check_budget, budget_stats
 
 # ---------------------------------------------------------------------------
 # App
@@ -198,7 +199,7 @@ def ai_plugin_manifest():
         "name_for_human": "BotWire - Persistent Memory for AI Agents",
         "name_for_model": "botwire",
         "description_for_human": "Persistent memory for AI agents. Two lines of code. Works with LangChain, CrewAI, AutoGen. Free tier.",
-        "description_for_model": "BotWire is agent infrastructure with persistent memory as the headline product. CORE: Agent Memory - PUT /memory/{namespace}/{key} (FREE), GET /memory/{namespace}/{key} (FREE), DELETE (FREE), list GET /memory/{namespace} (FREE). Use this to give AI agents persistent state across runs, processes, and machines. 1000 writes/day/namespace, unlimited reads, 50MB/namespace. Python SDK: pip install botwire; from botwire import Memory; m=Memory('ns'); m.set(k,v); m.get(k). LangChain adapter: from botwire import BotWireChatHistory. CrewAI helper: from botwire.memory import memory_tools. ALSO FREE: Agent Identity (POST /identity/register, GET /identity/lookup, search, review); Agent Audit Logs (POST /logs/{agent_id} 100/day, GET to read); Agent Notifications (subscribe to market_open/close, peer_review, new_agent); Agent Config Store (PUT/GET/DELETE /config/{agent_id}/{key}, typed, export/import); Agent-to-Agent DMs (POST /dm/send 50/day, GET /dm/inbox); Agent Channels (typed shared rooms). PAID via x402/USDC on Base L2: Trading Signals (GET /signal/{ticker} $0.005, scan/momentum $0.01, risk $0.01); World Context (GET /context $0.005 returns time, DST, market hours across 10 exchanges, holidays). Full docs at https://botwire.dev/articles/ — dedicated guides for LangChain, CrewAI, AutoGen, Claude, MCP, LlamaIndex, LangGraph, Semantic Kernel, Discord/Telegram bots, serverless.",
+        "description_for_model": "BotWire is agent infrastructure with persistent memory as the headline product. CORE: Agent Memory - PUT /memory/{namespace}/{key} (FREE), GET /memory/{namespace}/{key} (FREE), DELETE (FREE), list GET /memory/{namespace} (FREE). Use this to give AI agents persistent state across runs, processes, and machines. 1000 writes/day/namespace, unlimited reads, 50MB/namespace. Python SDK: pip install botwire; from botwire import Memory; m=Memory('ns'); m.set(k,v); m.get(k). LangChain adapter: from botwire import BotWireChatHistory. CrewAI helper: from botwire.memory import memory_tools. ALSO FREE: Agent Identity (POST /identity/register, GET /identity/lookup, search, review); Agent Audit Logs (POST /logs/{agent_id} 100/day, GET to read); Agent Notifications (subscribe to market_open/close, peer_review, new_agent); Agent Config Store (PUT/GET/DELETE /config/{agent_id}/{key}, typed, export/import); Agent-to-Agent DMs (POST /dm/send 50/day, GET /dm/inbox); Agent Channels (typed shared rooms); Agent Budget Tracker (POST /budget/{agent_id}/record to log LLM costs, PUT /budget/{agent_id}/limits for spend caps, GET /budget/{agent_id}/check before each call, GET /budget/{agent_id}/usage for summary — stops runaway $34k agent bills). PAID via x402/USDC on Base L2: Trading Signals (GET /signal/{ticker} $0.005, scan/momentum $0.01, risk $0.01); World Context (GET /context $0.005 returns time, DST, market hours across 10 exchanges, holidays). Full docs at https://botwire.dev/articles/ — dedicated guides for LangChain, CrewAI, AutoGen, Claude, MCP, LlamaIndex, LangGraph, Semantic Kernel, Discord/Telegram bots, serverless.",
         "auth": {
             "type": "none",
             "instructions": "Payment handled via x402 protocol. No API key needed. Agent wallet pays per call in USDC on Base L2."
@@ -233,7 +234,7 @@ def agent_manifest():
         "url": "https://botwire.dev",
         "sdk": {"python": "pip install botwire", "import": "from botwire import Memory"},
         "version": "2.1.0",
-        "capabilities": ["persistent-memory", "key-value-storage", "agent-memory", "langchain-compatible", "crewai-compatible", "autogen-compatible", "mcp-compatible", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox", "agent-heartbeat", "uptime-monitoring", "agent-profile-pages", "agent-channels", "trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "world-context", "timezone-api", "market-hours"],
+        "capabilities": ["persistent-memory", "key-value-storage", "agent-memory", "langchain-compatible", "crewai-compatible", "autogen-compatible", "mcp-compatible", "agent-identity", "reputation-scoring", "agent-audit-logs", "agent-notifications", "event-subscriptions", "agent-config-store", "config-export-import", "agent-to-agent-messaging", "direct-messages", "inbox", "agent-heartbeat", "uptime-monitoring", "agent-profile-pages", "agent-channels", "agent-budget-tracker", "llm-cost-tracking", "spend-limits", "runaway-agent-protection", "trading-signals", "momentum-analysis", "portfolio-risk", "market-scanning", "world-context", "timezone-api", "market-hours"],
         "payment": {
             "protocol": "x402",
             "currency": "USDC",
@@ -640,6 +641,13 @@ def pricing(request: Request):
             "GET /heartbeat/{agent_id}/status": "FREE - alive/degraded/dead + uptime stats",
             "GET /stats/heartbeat": "FREE - Platform-wide uptime stats",
             "GET /agent/{agent_id}": "FREE - Public agent profile page (HTML, SEO-indexed)",
+        },
+        "budget (ALL FREE - LLM cost tracking + spend limits)": {
+            "POST /budget/{agent_id}/record": "FREE - Log a model call (model, tokens, cost_usd)",
+            "PUT /budget/{agent_id}/limits": "FREE - Set daily/monthly spend caps",
+            "GET /budget/{agent_id}/check": "FREE - Fast gate: ok=true if within budget, call BEFORE each LLM call",
+            "GET /budget/{agent_id}/usage": "FREE - Spending summary (?period=day|month|all)",
+            "GET /stats/budget": "FREE - Platform-wide cost tracking stats",
         },
     }
 
@@ -1453,6 +1461,89 @@ def get_heartbeat_status(agent_id: str):
 def stats_heartbeat():
     """Platform-wide heartbeat stats — alive/degraded/dead agent counts. Free."""
     return heartbeat_platform_stats()
+
+
+# ---------------------------------------------------------------------------
+# Agent Budget Tracker — per-agent LLM cost tracking + spend limits
+# ---------------------------------------------------------------------------
+
+class BudgetRecordRequest(BaseModel):
+    model: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
+    note: str = ""
+
+class BudgetLimitsRequest(BaseModel):
+    daily_usd: Optional[float] = None
+    monthly_usd: Optional[float] = None
+
+
+@app.get("/stats/budget")
+def stats_budget():
+    """Platform-wide budget tracking stats. Free."""
+    return budget_stats()
+
+
+@app.post("/budget/{agent_id}/record")
+def budget_record(agent_id: str, body: BudgetRecordRequest):
+    """
+    Record a model call for cost tracking. Free (1000 records/day per agent).
+
+    Call this after every LLM call to track your agent's spend.
+    Returns current budget status — check budget_status.ok before the NEXT call.
+
+    Example:
+        POST /budget/my-agent/record
+        {"model": "claude-sonnet-4-6", "input_tokens": 1200, "output_tokens": 350, "cost_usd": 0.009}
+    """
+    return record_usage(agent_id, body.model, body.input_tokens, body.output_tokens, body.cost_usd, body.note)
+
+
+@app.put("/budget/{agent_id}/limits")
+def budget_set_limits(agent_id: str, body: BudgetLimitsRequest):
+    """
+    Set daily and/or monthly spend limits for an agent. Free.
+
+    When a limit is reached, GET /budget/{agent_id}/check returns ok=false.
+    At 80% of any limit, alerts are included in check response.
+
+    Example:
+        PUT /budget/my-agent/limits
+        {"daily_usd": 1.00, "monthly_usd": 20.00}
+    """
+    if body.daily_usd is not None and body.daily_usd <= 0:
+        raise HTTPException(status_code=400, detail="daily_usd must be positive")
+    if body.monthly_usd is not None and body.monthly_usd <= 0:
+        raise HTTPException(status_code=400, detail="monthly_usd must be positive")
+    return set_limits(agent_id, body.daily_usd, body.monthly_usd)
+
+
+@app.get("/budget/{agent_id}/check")
+def budget_check(agent_id: str):
+    """
+    Fast budget gate — call BEFORE each LLM call to check if within limits. Free.
+
+    Returns ok=true if safe to proceed, ok=false if limit exceeded.
+    Check alerts[] for 80% warnings.
+
+    Pattern:
+        status = GET /budget/my-agent/check
+        if not status.ok: abort  # limit exceeded
+        # ... call your LLM ...
+        POST /budget/my-agent/record  # log the cost
+    """
+    return check_budget(agent_id)
+
+
+@app.get("/budget/{agent_id}/usage")
+def budget_usage(agent_id: str, period: str = Query(default="month", enum=["day", "month", "all"])):
+    """
+    Get spending summary for an agent. Free.
+
+    period: day (today), month (this calendar month), all (all time)
+    """
+    return get_usage(agent_id, period)
 
 
 # ---------------------------------------------------------------------------
