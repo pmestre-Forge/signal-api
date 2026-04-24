@@ -35,6 +35,7 @@ from config_store import config_set, config_get, config_delete, config_list, con
 from dm import send_dm, get_inbox, get_thread, dm_global_stats
 from heartbeat import record_heartbeat, get_status as heartbeat_get_status, heartbeat_platform_stats
 from budget import record_usage, set_limits, get_usage, check_budget, budget_stats
+from mcp_template import generate as mcp_tpl_generate, record_download as mcp_tpl_record_dl, download_count as mcp_tpl_count
 
 # ---------------------------------------------------------------------------
 # App
@@ -1658,3 +1659,204 @@ def agent_profile_page(agent_id: str):
 </body>
 </html>"""
     return HTMLResponse(content=html, status_code=200)
+
+
+# ---------------------------------------------------------------------------
+# MCP Memory Server Template
+# ---------------------------------------------------------------------------
+
+def _mcp_template_html(dl_count: int) -> str:
+    count_str = f"{dl_count:,}" if dl_count > 0 else "Be the first"
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Memory Server Template — BotWire</title>
+  <meta name="description" content="Drop-in MCP server that gives any Claude or MCP-compatible AI agent persistent memory. Free. One file. Two minutes to set up.">
+  <link rel="canonical" href="https://botwire.dev/templates/mcp-memory">
+  <meta property="og:title" content="MCP Memory Server Template — BotWire">
+  <meta property="og:description" content="Drop-in MCP server. Gives Claude and any MCP-compatible agent persistent memory backed by BotWire. Free.">
+  <meta property="og:url" content="https://botwire.dev/templates/mcp-memory">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    *{{margin:0;padding:0;box-sizing:border-box}}
+    body{{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0a0a0a;color:#d0d0d0;line-height:1.6;font-size:15px}}
+    nav{{padding:15px 20px;border-bottom:1px solid #222;display:flex;align-items:center;gap:16px}}
+    nav a{{color:#38bdf8;text-decoration:none;font-weight:600;font-size:0.95em}}
+    .c{{max-width:860px;margin:0 auto;padding:40px 20px 80px}}
+    h1{{color:#fff;font-size:2.2em;margin-bottom:10px;letter-spacing:-0.01em}}
+    .lede{{color:#888;margin-bottom:36px;font-size:1.1em;max-width:600px}}
+    .badge{{display:inline-block;background:#1e293b;color:#38bdf8;border:1px solid #334155;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;margin-bottom:20px}}
+    .dl-count{{display:inline-block;background:#0d1f0d;color:#4ade80;border:1px solid #166534;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;margin-left:8px}}
+    .card{{background:#141414;border:1px solid #262626;border-radius:12px;padding:28px;margin-bottom:24px}}
+    .card h2{{color:#fff;font-size:1.2em;margin-bottom:14px}}
+    pre{{background:#0a0a0a;border:1px solid #262626;border-radius:8px;padding:18px;font-size:13px;color:#a3e635;overflow-x:auto;line-height:1.5}}
+    code{{background:#1e293b;padding:2px 6px;border-radius:3px;font-size:13px;color:#38bdf8}}
+    .btn{{display:inline-block;background:#38bdf8;color:#000;font-weight:700;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:15px;margin-top:8px}}
+    .btn:hover{{background:#7dd3fc}}
+    .btn-ghost{{background:transparent;border:1px solid #334155;color:#94a3b8;margin-left:12px}}
+    .btn-ghost:hover{{background:#1e293b;color:#fff}}
+    .steps{{counter-reset:steps}}
+    .step{{counter-increment:steps;display:flex;gap:16px;margin-bottom:20px}}
+    .step-num{{width:28px;height:28px;background:#1e3a5f;color:#38bdf8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px}}
+    .step-num::before{{content:counter(steps)}}
+    .step-body h3{{color:#e2e8f0;font-size:15px;margin-bottom:6px}}
+    .step-body p{{color:#94a3b8;font-size:14px}}
+    .tools-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px}}
+    .tool-chip{{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:12px 16px}}
+    .tool-chip .name{{color:#a3e635;font-family:monospace;font-size:13px;font-weight:600}}
+    .tool-chip .desc{{color:#64748b;font-size:12px;margin-top:4px}}
+    .disclaimer{{background:#1a0f00;border:1px solid #854d0e;border-radius:8px;padding:16px;color:#fbbf24;font-size:13px;line-height:1.7}}
+    footer{{text-align:center;color:#475569;font-size:13px;padding:40px 0}}
+    footer a{{color:#38bdf8;text-decoration:none}}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="https://botwire.dev">BotWire</a>
+    <span style="color:#475569;font-size:14px;">The home address for AI agents</span>
+  </nav>
+  <div class="c">
+    <div style="margin-bottom:20px">
+      <span class="badge">MCP Template</span>
+      <span class="dl-count">{count_str} downloads</span>
+    </div>
+    <h1>Persistent Memory for MCP Agents</h1>
+    <p class="lede">One Python file. Drop it into any MCP setup. Your agent gets persistent memory backed by BotWire — free tier, no API key required.</p>
+
+    <div style="margin-bottom:32px">
+      <a class="btn" href="/templates/mcp-memory/download">Download botwire_memory_mcp.py</a>
+      <a class="btn btn-ghost" href="/templates/mcp-memory/download?agent_id=YOUR_ID">Download with agent ID</a>
+    </div>
+
+    <div class="card">
+      <h2>What you get</h2>
+      <div class="tools-grid">
+        <div class="tool-chip"><div class="name">memory_read</div><div class="desc">Read a value by namespace + key</div></div>
+        <div class="tool-chip"><div class="name">memory_write</div><div class="desc">Write a value, persists forever</div></div>
+        <div class="tool-chip"><div class="name">memory_delete</div><div class="desc">Remove a specific key</div></div>
+        <div class="tool-chip"><div class="name">memory_list</div><div class="desc">List all keys in a namespace</div></div>
+        <div class="tool-chip"><div class="name">memory_search</div><div class="desc">Find keys by substring match</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Setup in 3 steps</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3>Install dependencies</h3>
+            <pre>pip install mcp httpx</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3>Download + set your agent ID</h3>
+            <p>Edit <code>AGENT_ID</code> in the downloaded file, or pass it as a query param:</p>
+            <pre>curl "https://botwire.dev/templates/mcp-memory/download?agent_id=my-agent" -o botwire_memory_mcp.py</pre>
+            <p style="margin-top:8px">No agent ID yet? Register free:</p>
+            <pre>curl -X POST https://botwire.dev/identity/register \\
+  -H "Content-Type: application/json" \\
+  -d '{{"name":"my-agent","description":"My AI agent","accept_terms":true}}'</pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num"></div>
+          <div class="step-body">
+            <h3>Add to your MCP config</h3>
+            <pre>{{
+  "mcpServers": {{
+    "botwire-memory": {{
+      "command": "python",
+      "args": ["./botwire_memory_mcp.py"]
+    }}
+  }}
+}}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Usage example (Claude Desktop)</h2>
+      <pre># In your Claude conversation:
+"Remember that my project deadline is May 1st"
+→ memory_write("context", "deadline", "May 1st")
+
+"What's my deadline?"
+→ memory_read("context", "deadline")
+→ "May 1st"
+
+"What do you know about me?"
+→ memory_list("context")
+→ ["deadline", "name", "preferences"]</pre>
+    </div>
+
+    <div class="card">
+      <h2>Disclaimer</h2>
+      <div class="disclaimer">
+        Data is stored on BotWire's shared infrastructure. Free tier is rate-limited and best-effort — no SLA, no uptime guarantee.
+        Do not store sensitive credentials, PII, or data you cannot afford to lose.
+        Always maintain your own backups for critical agent state.
+        <a href="https://botwire.dev/terms" style="color:#fbbf24;margin-left:6px">Full terms →</a>
+      </div>
+    </div>
+
+    <div class="card" style="background:#0f172a;border-color:#1e293b;">
+      <h2>Free tier limits</h2>
+      <ul style="color:#94a3b8;font-size:14px;padding-left:20px;line-height:2">
+        <li>Unlimited namespaces</li>
+        <li>10MB per namespace</li>
+        <li>No API key required</li>
+        <li>Rate-limited (burst: 60 req/min)</li>
+        <li>Data persists indefinitely (subject to inactivity cleanup after 90 days)</li>
+      </ul>
+    </div>
+  </div>
+  <footer>
+    <a href="https://botwire.dev">botwire.dev</a> &mdash; Infrastructure for AI agents &mdash;
+    <a href="https://botwire.dev/docs">Docs</a> &mdash;
+    <a href="https://botwire.dev/pricing">Pricing</a>
+  </footer>
+</body>
+</html>"""
+
+
+@app.get("/templates/mcp-memory")
+def mcp_template_page(request: Request, agent_id: str = ""):
+    """MCP Memory Server template landing page."""
+    accept = request.headers.get("accept", "").lower()
+    wants_json = "application/json" in accept and "text/html" not in accept
+    if wants_json:
+        return {
+            "template": "mcp-memory",
+            "description": "Self-contained MCP server giving any agent persistent memory via BotWire",
+            "download": "https://botwire.dev/templates/mcp-memory/download",
+            "download_with_agent_id": "https://botwire.dev/templates/mcp-memory/download?agent_id={YOUR_ID}",
+            "tools": ["memory_read", "memory_write", "memory_delete", "memory_list", "memory_search"],
+            "requires": ["mcp", "httpx"],
+            "free": True,
+            "downloads": mcp_tpl_count(),
+        }
+    return HTMLResponse(_mcp_template_html(mcp_tpl_count()))
+
+
+@app.get("/templates/mcp-memory/download")
+def mcp_template_download(agent_id: str = ""):
+    """Download the MCP Memory Server Python script, optionally with a specific agent ID embedded."""
+    mcp_tpl_record_dl(agent_id or "anonymous")
+    script = mcp_tpl_generate(agent_id)
+    return Response(
+        content=script,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="botwire_memory_mcp.py"'},
+    )
+
+
+@app.get("/stats/mcp-template")
+def mcp_template_stats():
+    """Stats for the MCP Memory Server template."""
+    return {"total_downloads": mcp_tpl_count()}
