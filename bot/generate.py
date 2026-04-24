@@ -53,6 +53,11 @@ PRODUCT_ROTATION = [
         "endpoint": "POST /dm/send",
     },
     {
+        "name": "MCP Memory Server",
+        "focus": "Drop-in MCP server that gives Claude Desktop and any MCP-compatible agent persistent memory via BotWire. One Python file, pip install mcp httpx, done. Free tier. Download at botwire.dev/templates/mcp-memory",
+        "endpoint": "GET /templates/mcp-memory/download",
+    },
+    {
         "name": "Trading Signals",
         "focus": "Momentum signals for US equities — RSI, ADX, MACD, volume composite. BUY/SELL/HOLD with confidence. $0.005/call via x402. One of the paid endpoints on a mostly-free platform.",
         "endpoint": "GET /signal/{ticker}",

@@ -65,4 +65,5 @@
   <url><loc>https://botwire.dev/playground</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://botwire.dev/status</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://botwire.dev/articles/retro-2026-04-22</loc><changefreq>never</changefreq><priority>0.5</priority></url>
+  <url><loc>https://botwire.dev/templates/mcp-memory</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
 </urlset>
