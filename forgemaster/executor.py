@@ -198,13 +198,32 @@ ACTION_RE = re.compile(r"^([A-Z_]{3,40})\s*(.*)", re.DOTALL)
 
 
 def _parse_action(description: str) -> tuple[str, str] | None:
-    """Description may start with 'ACTION_NAME\\n<rest>'. Return (action, rest) or None."""
-    first_line = description.strip().split("\n", 1)
-    m = ACTION_RE.match(first_line[0])
+    """Description starts with 'ACTION_NAME ...args...'. Return (action, args) or None.
+
+    args includes everything after the action keyword — same-line kv pairs AND any
+    subsequent lines (multi-line kv blocks, narrative). Handlers decide what to do
+    with it.
+    """
+    m = ACTION_RE.match(description.strip())
     if not m:
         return None
-    rest = first_line[1] if len(first_line) > 1 else m.group(2)
-    return m.group(1), rest.strip()
+    return m.group(1), m.group(2).strip()
+
+
+def _parse_inline_kv(text: str) -> dict[str, str]:
+    """Parse 'key=value key2=value2' from the first paragraph of text.
+
+    Handles single/double-quoted values (which may contain spaces) and bare
+    unquoted values (no spaces). Stops at the first blank line so trailing
+    narrative is ignored.
+    """
+    head = text.split("\n\n", 1)[0].replace("\n", " ")
+    kv: dict[str, str] = {}
+    for m in re.finditer(r"(\w+)=(?:'([^']*)'|\"([^\"]*)\"|(\S+))", head):
+        key = m.group(1)
+        val = m.group(2) if m.group(2) is not None else (m.group(3) if m.group(3) is not None else m.group(4))
+        kv[key] = val
+    return kv
 
 
 def execute(pid: str) -> dict:
@@ -225,7 +244,9 @@ def execute(pid: str) -> dict:
 
     try:
         if action == "ADD_ARTICLE":
-            kv = dict(re.findall(r"(\w+)\s*=\s*(.+)", args))
+            kv = _parse_inline_kv(args)
+            if "slug" not in kv or "title" not in kv:
+                return {"error": f"ADD_ARTICLE missing required keys (have: {list(kv.keys())})"}
             result = _handle_add_article(
                 slug=kv["slug"].strip(),
                 title=kv["title"].strip(),
