@@ -64,19 +64,25 @@ PRODUCT_ROTATION = [
     },
 ]
 
-# Optional: use Anthropic for fresh content
+# LLM client — defaults to Claude Code CLI (Max plan, free).
+# Falls back to anthropic SDK if API mode is forced (LLM_FORCE_API=1).
 try:
-    from anthropic import Anthropic
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).parent.parent / "forgemaster"))
+    from llm import get_client as _get_llm_client
+    _LLM_AVAILABLE = True
+except Exception:
+    _LLM_AVAILABLE = False
 
 
 def _get_client():
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key or not ANTHROPIC_AVAILABLE:
+    if not _LLM_AVAILABLE:
         return None
-    return Anthropic(api_key=api_key)
+    try:
+        return _get_llm_client()
+    except Exception:
+        return None
 
 
 def _today_product() -> dict:

@@ -4,14 +4,15 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 sys.path.insert(0, str(Path(__file__).parent))
 from generate_articles import markdown_to_html
 
 ROOT = Path(__file__).parent.parent.parent
 load_dotenv(ROOT / "bot" / ".env", override=True)
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+sys.path.insert(0, str(ROOT / "forgemaster"))
+from llm import get_client
+client = get_client()
 
 prompt = """Write a personal, slightly self-deprecating engineering blog post. First-person voice as Pedro, the solo founder of BotWire.
 

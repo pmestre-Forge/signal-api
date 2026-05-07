@@ -17,7 +17,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
+from llm import get_client
 
 PROJECT_ROOT = Path(__file__).parent.parent
 load_dotenv(PROJECT_ROOT / "bot" / ".env", override=True)
@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import proposals as prop_store
 from audit_legion.audit_proposal import _platform_context
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = get_client()
 
 BASE = "https://botwire.dev"
 

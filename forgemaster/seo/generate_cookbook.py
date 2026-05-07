@@ -1,13 +1,15 @@
 """Generate a cookbook page: 20 copy-paste recipes using BotWire."""
 import json
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 ROOT = Path(__file__).parent.parent.parent
 load_dotenv(ROOT / "bot" / ".env", override=True)
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+sys.path.insert(0, str(ROOT / "forgemaster"))
+from llm import get_client
+client = get_client()
 
 OUT = ROOT / "static" / "articles" / "cookbook.html"
 

@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 from dotenv import load_dotenv
-from anthropic import Anthropic
+from llm import get_client
 
 PROJECT_ROOT = Path(__file__).parent.parent
 load_dotenv(PROJECT_ROOT / "bot" / ".env", override=True)
@@ -24,7 +24,7 @@ load_dotenv(PROJECT_ROOT / "bot" / ".env", override=True)
 sys.path.insert(0, str(Path(__file__).parent))
 import proposals as prop_store
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = get_client()
 
 BASE = "https://botwire.dev"
 

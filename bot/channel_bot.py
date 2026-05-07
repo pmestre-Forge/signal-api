@@ -73,15 +73,15 @@ def post(agent_id: str, entry_type: str, data) -> bool:
 
 
 def respond_with_claude(message: str, sender_id: str, respond_as: str = "forgemaster") -> str | None:
-    """Generate a response using Claude API, responding AS a specific agent persona."""
-    if not ANTHROPIC_API_KEY:
-        return None
-
+    """Generate a response — uses Claude Code CLI (Max plan, free) by default."""
     persona = AGENT_PERSONAS.get(respond_as, AGENT_PERSONAS["forgemaster"])
 
     try:
-        from anthropic import Anthropic
-        client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).parent.parent / "forgemaster"))
+        from llm import get_client
+        client = get_client()
 
         msg = client.messages.create(
             model="claude-sonnet-4-20250514",

@@ -9,14 +9,16 @@ Each page is optimized for:
 """
 import json
 import os
+import sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 ROOT = Path(__file__).parent.parent.parent
 load_dotenv(ROOT / "bot" / ".env", override=True)
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+sys.path.insert(0, str(ROOT / "forgemaster"))
+from llm import get_client
+client = get_client()
 
 ARTICLES_DIR = ROOT / "static" / "articles"
 ARTICLES_DIR.mkdir(parents=True, exist_ok=True)

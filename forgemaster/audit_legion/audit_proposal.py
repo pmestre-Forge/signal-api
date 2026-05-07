@@ -13,7 +13,6 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 HERE = Path(__file__).parent
 PROJECT_ROOT = HERE.parent.parent
@@ -21,7 +20,10 @@ load_dotenv(PROJECT_ROOT / "bot" / ".env", override=True)
 
 PERSONAS = json.loads((HERE / "personas.json").read_text())["roles"]
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# LLM wrapper auto-routes to Claude Code CLI (Pedro's Max plan, free) by default
+sys.path.insert(0, str(HERE.parent))
+from llm import get_client
+client = get_client()
 
 
 def _run_one(persona: dict, proposal: dict, platform_context: str) -> dict:

@@ -15,16 +15,16 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 PROJECT_ROOT = Path(__file__).parent.parent
 load_dotenv(PROJECT_ROOT / "bot" / ".env", override=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
 from audit_legion.audit_proposal import audit
+from llm import get_client
 import proposals as prop_store
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client = get_client()
 
 
 CEO_SYSTEM = """You are the acting CEO of BotWire, a solo-founder AI agent infrastructure company.
